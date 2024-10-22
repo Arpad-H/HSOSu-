@@ -292,6 +292,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cursorDot: {fileID: 4648616613067537124, guid: 8c171efd642659449b9fddade03694cf, type: 3}
+  camera: {fileID: 0}
 --- !u!4 &775640132
 Transform:
   m_ObjectHideFlags: 0
@@ -445,11 +446,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1941561211320933338, guid: 8c171efd642659449b9fddade03694cf, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 9.39
       objectReference: {fileID: 0}
     - target: {fileID: 1941561211320933338, guid: 8c171efd642659449b9fddade03694cf, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: -4.41
       objectReference: {fileID: 0}
     - target: {fileID: 1941561211320933338, guid: 8c171efd642659449b9fddade03694cf, type: 3}
       propertyPath: m_LocalPosition.z
@@ -461,15 +462,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1941561211320933338, guid: 8c171efd642659449b9fddade03694cf, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 1941561211320933338, guid: 8c171efd642659449b9fddade03694cf, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 1941561211320933338, guid: 8c171efd642659449b9fddade03694cf, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 1941561211320933338, guid: 8c171efd642659449b9fddade03694cf, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -481,6 +482,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1941561211320933338, guid: 8c171efd642659449b9fddade03694cf, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2874015493486511469, guid: 8c171efd642659449b9fddade03694cf, type: 3}
+      propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4648616613067537124, guid: 8c171efd642659449b9fddade03694cf, type: 3}
