@@ -14,8 +14,8 @@ public class SpinnerScript: MonoBehaviour
     // Update is called once per frame
     private void Update()
     {
-        _ttl = _ttl - Time.deltaTime;
-        transform.Rotate(0f, 0f, 20 * Time.deltaTime);
+        _ttl -= Time.deltaTime;
+        transform.Rotate(0f, 0f, 40 * Time.deltaTime);
         if (_ttl <= 0f) Destroy(this.gameObject);
     }
 

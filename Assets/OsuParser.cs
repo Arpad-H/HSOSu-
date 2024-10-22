@@ -8,7 +8,7 @@ public class OsuParser : MonoBehaviour
     public GameObject dotPrefab; // Prefab for the dot
     public GameObject sliderPrefab; // Prefab for the slider
     public GameObject spinnerPrefab; // Prefab for the spinner
-    private List<HitObject> hitObjects = new List<HitObject>();
+    private readonly List<HitObject> _hitObjects = new List<HitObject>();
     public Camera gameCamera;
     void Start()
     {
@@ -41,16 +41,17 @@ public class OsuParser : MonoBehaviour
             var type = int.Parse(data[3]);
             if ((type & 1) > 0) // Check if it's a hit circle
             {
-                hitObjects.Add(new Circle(OsuToUnityCoordinates(x,y), time));
+                _hitObjects.Add(new Circle(OsuToUnityCoordinates(x,y), time));
             }
             else if ((type & 2) > 0) // Check if it's a slider
             {
                 var sliderData = data[5]; // L|291:77, P|...
-                hitObjects.Add(new Slider(OsuToUnityCoordinates(x,y), time, sliderData));
+                var arcLength = float.Parse(data[7]);
+                _hitObjects.Add(new Slider(OsuToUnityCoordinates(x,y), time, sliderData, arcLength));
             }
             else if ((type & 4) > 0) // Check if it's a spinner
             {
-                hitObjects.Add(new Spinner(OsuToUnityCoordinates(x,y), time));
+                _hitObjects.Add(new Spinner(OsuToUnityCoordinates(x,y), time));
             }
         }
     }
@@ -72,17 +73,16 @@ public class OsuParser : MonoBehaviour
     }
     IEnumerator SpawnObjects()
     {
-        foreach (var hitObject in hitObjects)
+        foreach (var hitObject in _hitObjects)
         {
             yield return new WaitForSeconds(hitObject.Time - audioSource.time);
             switch (hitObject)
             {
                 case Circle circle:
                     SpawnDot(circle.Position);
-                    // SpawnSpinner(circle.Position);
                     break;
                 case Slider slider:
-                    SpawnSlider(slider.Position, slider.PathData);
+                    SpawnSlider(slider.Position, slider.PathData, slider.ArcLength);
                     break;
                 case Spinner spinner:
                     SpawnSpinner(spinner.Position);
@@ -102,19 +102,73 @@ public class OsuParser : MonoBehaviour
     }
    
 
-    void SpawnSlider(Vector3 position, string pathData)
+    void SpawnSlider(Vector3 position, string pathData, float arcLength)
     {
-        //TODO
-        // Handle slider spawning and movement along pathData
         var sliderObject = Instantiate(sliderPrefab, position, Quaternion.identity);
-        // Additional logic to animate slider along the path
+
+        var points = ParsePathData(pathData ,out var curveType);
+        
+        points.Insert(0,new Vector3(position.x,position.y,0));
+        
+        var sliderComponent = sliderObject.GetComponent<SliderScript>();
+        sliderComponent.SetCurveType(curveType, points, arcLength);
+
+    }
+
+    List<Vector3> ParsePathData(string pathData, out CurveType curveType)
+    {
+        var points = new List<Vector3>();
+        var segments = pathData.Split('|');
+        
+        curveType = CurveType.Linear;
+        
+        if (segments.Length < 2)
+            return points;
+
+        // Erster Teil ist der Kurventyp (B, C, L, P)
+        switch (segments[0])
+        {
+            case "B":
+                curveType = CurveType.Bezier;
+                break;
+            case "C":
+                curveType = CurveType.CatmullRom;
+                break;
+            case "L":
+                curveType = CurveType.Linear;
+                break;
+            case "P":
+                curveType = CurveType.PerfectCircle;
+                break;
+            default:
+                Debug.LogWarning("Unbekannter Kurventyp: " + segments[0]);
+                break;
+        }
+
+        // Darauffolgende Teile sind die Kontrollpunkte
+        for (var i = 1; i < segments.Length; i++)
+        {
+            var coords = segments[i].Split(':');
+            if (coords.Length == 2)
+            {
+                var xOsu = int.Parse(coords[0]);
+                var yOsu = int.Parse(coords[1]);
+                var point = OsuToUnityCoordinates(xOsu, yOsu);
+                points.Add(point);
+            }
+            else
+            {
+                
+            }
+        }
+        return points;
     }
 }
 
 public abstract class HitObject
 {
     public Vector3 Position;
-    public float Time;
+    public readonly float Time;
 
     protected HitObject(Vector3 position, float time)
     {
@@ -132,11 +186,13 @@ public class Circle : HitObject //TODO put in circleScript
 
 public class Slider : HitObject //TODO put in sliderScript
 {
-    public string PathData;
+    public readonly string PathData;
+    public readonly float ArcLength;
 
-    public Slider(Vector3 position, float time, string pathData) : base(position, time)
+    public Slider(Vector3 position, float time, string pathData, float arcLength) : base(position, time)
     {
-        this.PathData = pathData;
+        PathData = pathData;
+        ArcLength = arcLength;
     }
 }
 
