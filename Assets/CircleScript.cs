@@ -26,6 +26,8 @@ public class CircleScript : MonoBehaviour
     // Update is called once per frame
     private void Update()
     {
+        _ttl -= Time.deltaTime;
+        if (_ttl <= 0f) Destroy(this.gameObject);
         ttl = ttl - Time.deltaTime;
 
         border.transform.localScale = Vector3.Lerp(Vector3.one, initBorderScale, ttl / maxLifespan);
