@@ -2,9 +2,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CircleScript : MonoBehaviour
+
+public class SliderScript: MonoBehaviour
 {
-    private float _ttl = 4f;
+    private float _ttl = 5f;
     // Start is called before the first frame update
     void Start()
     {
@@ -17,4 +18,5 @@ public class CircleScript : MonoBehaviour
         _ttl = _ttl - Time.deltaTime;
         if (_ttl <= 0f) Destroy(this.gameObject);
     }
+    
 }

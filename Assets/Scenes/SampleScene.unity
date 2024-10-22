@@ -153,7 +153,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   audioSource: {fileID: 1279125651}
   dotPrefab: {fileID: 358770297753055203, guid: 80b5b236d61b4e64e9ad73e0f960b276, type: 3}
-  sliderPrefab: {fileID: 358770297753055203, guid: 80b5b236d61b4e64e9ad73e0f960b276, type: 3}
+  sliderPrefab: {fileID: 3243357798010809807, guid: f7fd43b96acabcf438cc092a6baa478b, type: 3}
+  spinnerPrefab: {fileID: 2013330752440249520, guid: 79a0aa7c61b8a734b9392f4fca6b6138, type: 3}
   gameCamera: {fileID: 519420031}
 --- !u!4 &348851820
 Transform:
