@@ -33,7 +33,7 @@ using UnityEngine;
 //
 // async for event in pen.events():
 // if isinstance(event, dto.Dot):
-// input_data = f"{event.x};{event.y}"
+// input_data = f"{event.x};{event.y};{event.tilt_x};{event.tilt_y}"
 // server_socket.sendto(input_data.encode(), ("localhost", 8081))
 //
 // asyncio.run(main())
@@ -55,13 +55,33 @@ public class PenConnection : MonoBehaviour
     float right;
     float top;
     float bottom;
-
+    public float penX;
+    public float penY;
+    public float tilltX;
+    public float tilltY;
+    
     void Start()
     {
         cursorDot = GameObject.Find("cursorDot");
         udpClient = new UdpClient(8081);
         remoteEndPoint = new IPEndPoint(IPAddress.Any, 8081);
     }
+    // Vector3 ToUnityCoordinates(int x_osu, int y_osu)
+    // {
+    //     // Step 1: Normalize the osu coordinates (0 to 1 range)
+    //     float x_norm = x_osu / 512f;
+    //     float y_norm = y_osu / 384f;
+    //
+    //     // Step 2: Calculate Unity's camera dimensions
+    //     float cameraHeight = 2f * gameCamera.orthographicSize;
+    //     float cameraWidth = cameraHeight * gameCamera.aspect;
+    //
+    //     // Step 3: Map normalized osu coordinates to Unity's world coordinates
+    //     float x_unity = (x_norm - 0.5f) * cameraWidth;
+    //     float y_unity = (y_norm - 0.5f) * cameraHeight;
+    //
+    //     return new Vector3(x_unity, y_unity, 0f); // Z is zero for 2D
+    // }
     void Update()
     {
         if (udpClient.Available > 0)
@@ -72,12 +92,15 @@ public class PenConnection : MonoBehaviour
             // Use the input to control the game
             // Debug.Log("Received: " + message); 
             String[] stdfs = (message.Split(";"));
-            float x = float.Parse(stdfs[1], en_us.NumberFormat);
-            float y = float.Parse(stdfs[0], en_us.NumberFormat)-5;
-           // Debug.Log("x: " +x + "y: " + y);
-            x = Remap(x, 0, 83, -8.4f, 9.4f);
-            y = Remap(y, 0, 118, -4.5f, 5.5f);
-            Vector3 pos = new Vector3(x, y, 0.0f);
+            tilltY = float.Parse(stdfs[3], en_us.NumberFormat);
+            tilltX = float.Parse(stdfs[2], en_us.NumberFormat);
+            penX = float.Parse(stdfs[1], en_us.NumberFormat);
+            penY = float.Parse(stdfs[0], en_us.NumberFormat)-5;
+            Debug.Log("penX: " +penX + "penY: " + penY);
+            Debug.Log("tilltX: " + tilltX + "tilltY: " + tilltY);
+            penX = Remap(penX, 0, 83, -8.4f, 9.4f);
+            penY = Remap(penY, 0, 118, -4.5f, 5.5f);
+            Vector3 pos = new Vector3(penX, penY, 0.0f);
             //x = -10 + pos.x * 20;
             //y = -5 + pos.y * 10;
             //pos.x = x;
