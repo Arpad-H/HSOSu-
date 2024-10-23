@@ -3,7 +3,8 @@ using UnityEngine;
 
 public class SliderScript : MonoBehaviour
 {
-    private float _ttl = 5f;  // Total time for the sphere to travel
+    private float _ttl = 1f;
+    private float maxTtl;// Total time for the sphere to travel
     private ICurve _curve;
     private ICurve infill_curve;
     public LineRenderer _lineRenderer;
@@ -15,6 +16,7 @@ public class SliderScript : MonoBehaviour
 
     void Start()
     {
+        maxTtl = _ttl;
         SetLineRenderer();
         SetupSphere();
         _curve.Draw(_lineRenderer);
@@ -36,7 +38,7 @@ public class SliderScript : MonoBehaviour
         else
         {
             // Move the sphere along the curve based on the time elapsed
-            MoveSphereAlongCurve(_elapsedTime / 5f);  // 5f is the initial _ttl
+            MoveSphereAlongCurve(_elapsedTime / maxTtl);  // 5f is the initial _ttl
         }
     }
 
