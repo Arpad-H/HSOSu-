@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
+    //useless push
     public Canvas cm;
     CanvasManager canvasManager;
     public int score = 0;

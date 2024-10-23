@@ -40,4 +40,35 @@ public class CatmullRomCurve : ICurve
                        (2f * a - 5f * b + 4f * c - d) * (u * u) + 
                        (-a + c) * u + 2f * b);
     }
+    public Vector3 GetPointAtTime(float t)
+    {
+        // Catmull-Rom requires at least 4 points
+        if (controlPoints.Length < 4) return controlPoints[0];
+
+        // Figure out which segment we're in (based on total t)
+        int numSegments = controlPoints.Length - 3; // Num segments = num points - 3 (catmull-rom uses four points per segment)
+        float segmentT = t * numSegments;
+        int segmentIndex = Mathf.FloorToInt(segmentT);
+        segmentT -= segmentIndex;
+
+        // Ensure index stays within bounds
+        if (segmentIndex >= controlPoints.Length - 3)
+        {
+            segmentIndex = controlPoints.Length - 4;
+        }
+
+        Vector3 p0 = controlPoints[segmentIndex];
+        Vector3 p1 = controlPoints[segmentIndex + 1];
+        Vector3 p2 = controlPoints[segmentIndex + 2];
+        Vector3 p3 = controlPoints[segmentIndex + 3];
+
+        // Catmull-Rom interpolation formula
+        float t2 = segmentT * segmentT;
+        float t3 = t2 * segmentT;
+
+        return 0.5f * ((2.0f * p1) +
+                       (-p0 + p2) * segmentT +
+                       (2.0f * p0 - 5.0f * p1 + 4.0f * p2 - p3) * t2 +
+                       (-p0 + 3.0f * p1 - 3.0f * p2 + p3) * t3);
+    }
 }
