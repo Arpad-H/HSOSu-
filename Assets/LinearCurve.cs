@@ -21,20 +21,17 @@ public class LinearCurve : ICurve
         // Berechne die Länge der Linie
         float totalLength = Vector3.Distance(controlPoints[0], controlPoints[1]);
 
-        // Bereite den neuen Endpunkt vor, falls die Länge MAXLänge überschreitet
-        Vector3 endpoint = controlPoints[1];
-
         if (totalLength > maxLength)
         {
             // Skaliere die Linie zur Maxlänge, indem ein entsprechend weit liegender Punkt errechnet wird
             Vector3 direction = (controlPoints[1] - controlPoints[0]).normalized;
-            endpoint = controlPoints[0] + direction * maxLength;
+            controlPoints[1] = controlPoints[0] + direction * maxLength;
         }
 
         // Setze die Endpunkte der Linie
         lineRenderer.positionCount = 2;
         lineRenderer.SetPosition(0, controlPoints[0]);
-        lineRenderer.SetPosition(1, endpoint);
+        lineRenderer.SetPosition(1, controlPoints[1]);
     }
     public Vector3 GetPointAtTime(float t)
     {
