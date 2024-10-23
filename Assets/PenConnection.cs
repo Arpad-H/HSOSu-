@@ -39,7 +39,7 @@ using UnityEngine;
 // asyncio.run(main())
 
 public class PenConnection : MonoBehaviour
-{  
+{
     UdpClient udpClient;
     IPEndPoint remoteEndPoint;
     public GameObject cursorDot;
@@ -106,7 +106,6 @@ public class PenConnection : MonoBehaviour
             //pos.x = x;
             //pos.y = y;
             cursorDot.transform.localPosition = pos;
-            cursorDot.transform.rotation = Quaternion.Euler(0, 0, 0);
             // Debug.Log(pos);
             // Instantiate(cursorDot, pos, Quaternion.identity);
         }

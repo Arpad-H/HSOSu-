@@ -51,4 +51,8 @@ public class BezierCurve : ICurve
         }
         return c;
     }
+    public Vector3 GetPointAtTime(float t)
+    {
+        return CalculateBezierPoint(t);
+    }
 }

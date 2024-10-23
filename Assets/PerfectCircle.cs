@@ -37,6 +37,11 @@ public class PerfectCircleCurve : ICurve
         lineRenderer.SetPositions(positions);
     }
 
+    public Vector3 GetPointAtTime(float t)
+    {
+        throw new System.NotImplementedException();
+    }
+
     private Vector3 CalculateCircleCenter(Vector3 p1, Vector3 p2, Vector3 p3)
     {
         // Berechne den Mittelpunkt des Kreises durch die drei Punkte mittels Umkreismethode
