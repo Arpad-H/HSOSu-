@@ -27,6 +27,11 @@ public class SwipeController : MonoBehaviour
             currentPage++;
             targetPos += pageStep;
             MovePage();
+        } else if (currentPage == maxPage)
+        {
+            currentPage = 0;
+            targetPos -= maxPage*pageStep;
+            Next();
         }
     }
 
@@ -38,6 +43,12 @@ public class SwipeController : MonoBehaviour
             targetPos -= pageStep;
             MovePage();
         }
+        else if (currentPage == 1)
+                {
+                    currentPage = maxPage + 1;
+                    targetPos += maxPage*pageStep;
+                    Previous();
+                }
     }
 
     void MovePage()
