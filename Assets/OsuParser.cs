@@ -4,6 +4,9 @@ using UnityEngine;
 
 public class OsuParser : MonoBehaviour
 {
+    private float playfieldHeight; 
+    private float playfieldWidth;
+    private float osuScale; 
     private const int k_OsuWidth = 512;
     private const int k_OsuHeight = 384;
     public AudioSource audioSource; // Reference to the song's audio source //TODO decide based on menu selection and from parser
@@ -17,7 +20,11 @@ public class OsuParser : MonoBehaviour
 
     void Start()
     {
-        ParseOsuFile("Assets/songfile.osu"); //TODO decide based on menu selection
+        playfieldHeight = 1080 * 0.8f;
+        playfieldWidth = (4/3) * playfieldHeight;
+        osuScale = Mathf.Min(playfieldWidth / k_OsuWidth, playfieldHeight / k_OsuHeight);
+        
+        ParseOsuFile("Assets/song2.osu"); //TODO decide based on menu selection
         StartCoroutine(SpawnObjects());
     }
 
@@ -131,46 +138,21 @@ public class OsuParser : MonoBehaviour
         }
     }
 
-    float OsuToUnityLength(float osuPixelLength)
+    float OsuToUnityLength(float osuLen)
     {
-        // Berechnung der Höhe und Breite der Kamera in Unity-Einheiten
-        var cameraHeight = 2f * gameCamera.orthographicSize;  // Ortographic Size * 2 für die gesamte Höhe
-        var cameraWidth = cameraHeight * gameCamera.aspect;   // Breite = Höhe * Seitenverhältnis
-
-        // Berechnung der Skalierung von Pixeln zur Weltgröße
-        var pixelSizeX = cameraWidth / k_OsuWidth;
-        var pixelSizeY = cameraHeight / k_OsuHeight;
-
-        // Berechnung des Verhältnisses für osu! Pixel zu Unity-Einheiten
-        // Hier nimmst du den Mittelwert, falls die Pixel nicht quadratisch skaliert
-        var osuToUnityScale = (pixelSizeX + pixelSizeY) / 2f;
-
-        // Umrechnung der osu! Pixel Länge auf Unity Länge
-        var unityLength = osuPixelLength * osuToUnityScale;
-
-        // Debug.Log("UnityLength: " + unityLength);
-        return unityLength;
-        
+        return osuLen;
+        return  (osuLen * osuScale);
     }
     
     Vector3 OsuToUnityCoordinates(int xOsu, int yOsu)
     {
-        // Step 1: Normalize the osu coordinates (0 to 1 range)
-        var xNorm = xOsu * 1f / k_OsuWidth;
-        var yNorm = yOsu * 1f / k_OsuHeight;
+        yOsu = 480 - yOsu; // Flip Y axis
+        return new Vector3(xOsu, yOsu, 0);
+        float xUnity = (xOsu * osuScale) - (playfieldWidth / 2); // Offset by half width
+        Debug.Log((( yOsu) * osuScale));
+        float yUnity =  (playfieldHeight / 2) - (( yOsu) * osuScale); // Flip Y and center
 
-        // Step 2: Calculate Unity's camera dimensions
-        var cameraHeight = 2f * gameCamera.orthographicSize;
-        var cameraWidth = cameraHeight * gameCamera.aspect;
-        
-        // Debug.Log("AspectRatio: " + gameCamera.aspect);
-        // 1.7777778 = 16:9
-        
-        // Step 3: Map normalized osu coordinates to Unity's world coordinates
-        var xUnity = (xNorm - 0.5f) * cameraWidth;
-        var yUnity = (yNorm - 0.5f) * cameraHeight;
-
-        return new Vector3(xUnity, yUnity, 0f); // Z is zero for 2D
+        return new Vector3(xUnity, yUnity, 0);
     }
 
     IEnumerator SpawnObjects()
@@ -220,7 +202,7 @@ public class OsuParser : MonoBehaviour
     }
 
 
-    void SpawnSlider(Vector3 position, string pathData, float arcLength,Color color)
+    void SpawnSlider(Vector3 position, string pathData, float length,Color color)
     {
         var sliderObject = Instantiate(sliderPrefab, position, Quaternion.identity);
 
@@ -229,7 +211,7 @@ public class OsuParser : MonoBehaviour
         points.Insert(0, new Vector3(position.x, position.y, 0));
 
         var sliderComponent = sliderObject.GetComponent<SliderScript>();
-        sliderComponent.SetCurveType(curveType, points, arcLength);
+        sliderComponent.SetCurveType(curveType, points, length);
         sliderComponent.SetColor(color);
 
     }

@@ -72,18 +72,18 @@ public class SliderScript : MonoBehaviour
     private void SetLineRenderer()
     {
         _lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
-        _lineRenderer.startWidth = 0.6f;
-        _lineRenderer.endWidth = 0.6f;
+        _lineRenderer.startWidth = 50f;
+        _lineRenderer.endWidth = 50f;
 
-        infill.startWidth = 0.5f;
-        infill.endWidth = 0.5f;
+        infill.startWidth = 40f;
+        infill.endWidth = 40f;
         infill.startColor = new Color(0f, 0f, 0f, 1f);
         infill.endColor = new Color(0f, 0f, 0f, 1f);
     }
 
     public void SetupSphere()
     {
-        sphere.transform.localScale = new Vector3(0.6f, 0.6f, 0.6f);
+        sphere.transform.localScale = new Vector3(60f, 60f, 60f);
     }
 
     public void SetColor(Color c)

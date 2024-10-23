@@ -9,6 +9,9 @@ public class PerfectCircleCurve : ICurve
 
     public PerfectCircleCurve(Vector3[] controlPoints, float arcLength)
     {
+       Debug.Log(arcLength);
+        
+       
         _controlPoints = controlPoints;
         _arcLength = arcLength;
     }
@@ -16,33 +19,35 @@ public class PerfectCircleCurve : ICurve
     public void Draw(LineRenderer lineRenderer)
     {
         if (_controlPoints.Length < 3) return;
+        //
+        // // Calculate the center of the circle using only the first two control points
+        // var startPoint = _controlPoints[0];
+        // var endPoint = _controlPoints[1];
+        // var controlPoint = _controlPoints[2];
+        //
+        // var midPoint = (startPoint + endPoint) / 2f;
+        // var radius = Vector3.Distance(startPoint, midPoint);
+        //
+        // // Calculate the angle of the arc
+        // float arcAngleRadians = _arcLength / radius;
+        //
+        // // Calculate the number of points along the arc
+        // int pointCount = Mathf.CeilToInt(k_NumCirclePoints * (arcAngleRadians / (2 * Mathf.PI)));
+        // pointCount = Mathf.Max(2, pointCount); // At least two points
+        //
+        // Vector3[] positions = new Vector3[pointCount];
+        // for (int i = 0; i < pointCount; i++)
+        // {
+        //     float angle = (i / (float)(pointCount - 1)) * arcAngleRadians; // Angle in Radians
+        //     positions[i] = new Vector3(
+        //         midPoint.x + Mathf.Cos(angle) * radius,
+        //         midPoint.y + Mathf.Sin(angle) * radius,
+        //         midPoint.z // Optional for z-coordinate, if 2D
+        //     );
+        // }
 
-        // Mittelpunkt und Radius des Kreises berechnen
-        var center = (_controlPoints[0] + _controlPoints[1] + _controlPoints[2]) / 3f;
-        var radius = Vector3.Distance(_controlPoints[0], center);
-
-        // Berechnung des Winkels in Grad, der der gegebenen Bogenlänge entspricht
-        // Bogenlänge = Radius * Winkel (in Radians), also Winkel = Bogenlänge / Radius
-        float arcAngleRadians = _arcLength / radius;
-        float arcAngleDegrees = arcAngleRadians * Mathf.Rad2Deg;
-
-        // Anzahl der Punkte entlang des Bogens berechnen
-        int pointCount = Mathf.CeilToInt(k_NumCirclePoints * (arcAngleDegrees / k_FullCircleDegrees));
-        pointCount = Mathf.Max(2, pointCount); // mindestens zwei Punkte
-
-        Vector3[] positions = new Vector3[pointCount];
-        for (int i = 0; i < pointCount; i++)
-        {
-            float angle = (i / (float)(pointCount - 1)) * arcAngleRadians; // Winkel in Radians
-            positions[i] = new Vector3(
-                center.x + Mathf.Cos(angle) * radius,
-                center.y + Mathf.Sin(angle) * radius,
-                center.z // Optional für z-Koordinate, falls 2D
-            );
-        }
-
-        lineRenderer.positionCount = pointCount;
-        lineRenderer.SetPositions(positions);
+        lineRenderer.positionCount = 3;
+        lineRenderer.SetPositions(_controlPoints);
     }
 
     public Vector3 GetPointAtTime(float t)
