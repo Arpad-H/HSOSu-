@@ -2,65 +2,87 @@
 
 public class CatmullRomCurve : ICurve
 {
-    private Vector3[] controlPoints;
-    private int numPoints = 50;
+    private readonly Vector3[] _controlPoints;
+    private const int k_NumPoints = 50;
+    private readonly float _unityLength;
 
-    public CatmullRomCurve(Vector3[] controlPoints)
+    public CatmullRomCurve(Vector3[] controlPoints, float unityLength)
     {
-        this.controlPoints = controlPoints;
+        _controlPoints = controlPoints;
+        _unityLength = unityLength;
     }
 
     public void Draw(LineRenderer lineRenderer)
     {
-        if (controlPoints.Length < 2) return;
+        if (_controlPoints.Length < 2) return;
 
-        Vector3[] positions = new Vector3[numPoints];
-        for (int i = 0; i < numPoints; i++)
+        Vector3[] positions = new Vector3[k_NumPoints];
+        float currentLength = 0.0f;
+        Vector3 previousPoint = CalculateCatmullRomPoint(0);
+        positions[0] = previousPoint;
+        int numValidPoints = 1;
+
+        for (int i = 1; i < k_NumPoints; i++)
         {
-            float t = i / (float)(numPoints - 1);
-            positions[i] = CalculateCatmullRomPoint(t);
+            float t = i / (float)(k_NumPoints - 1);
+            Vector3 point = CalculateCatmullRomPoint(t);
+            float segmentLength = Vector3.Distance(previousPoint, point);
+
+            if (currentLength + segmentLength > _unityLength)
+            {
+                float remainingLength = _unityLength - currentLength;
+                Vector3 direction = (point - previousPoint).normalized;
+                positions[numValidPoints] = previousPoint + direction * remainingLength;
+                numValidPoints++;
+                break;
+            }
+
+            positions[numValidPoints] = point;
+            numValidPoints++;
+            currentLength += segmentLength;
+            previousPoint = point;
         }
 
-        lineRenderer.positionCount = numPoints;
+        lineRenderer.positionCount = numValidPoints;
         lineRenderer.SetPositions(positions);
     }
 
     private Vector3 CalculateCatmullRomPoint(float t)
     {
-        int numSections = controlPoints.Length - 1;
+        int numSections = _controlPoints.Length - 1;
         int currPt = Mathf.Min(Mathf.FloorToInt(t * numSections), numSections - 1);
         float u = t * numSections - currPt;
 
-        Vector3 a = currPt == 0 ? controlPoints[0] : controlPoints[currPt - 1];
-        Vector3 b = controlPoints[currPt];
-        Vector3 c = controlPoints[currPt + 1];
-        Vector3 d = currPt + 2 < controlPoints.Length ? controlPoints[currPt + 2] : controlPoints[currPt + 1];
+        Vector3 a = currPt == 0 ? _controlPoints[0] : _controlPoints[currPt - 1];
+        Vector3 b = _controlPoints[currPt];
+        Vector3 c = _controlPoints[currPt + 1];
+        Vector3 d = currPt + 2 < _controlPoints.Length ? _controlPoints[currPt + 2] : _controlPoints[currPt + 1];
 
         return 0.5f * ((-a + 3f * b - 3f * c + d) * (u * u * u) +
-                       (2f * a - 5f * b + 4f * c - d) * (u * u) + 
+                       (2f * a - 5f * b + 4f * c - d) * (u * u) +
                        (-a + c) * u + 2f * b);
     }
     public Vector3 GetPointAtTime(float t)
     {
         // Catmull-Rom requires at least 4 points
-        if (controlPoints.Length < 4) return controlPoints[0];
+        if (_controlPoints.Length < 4) return _controlPoints[0];
 
         // Figure out which segment we're in (based on total t)
-        int numSegments = controlPoints.Length - 3; // Num segments = num points - 3 (catmull-rom uses four points per segment)
+        int numSegments = _controlPoints.Length - 3; // Num segments = num points - 3 (catmull-rom uses four points per segment)
         float segmentT = t * numSegments;
         int segmentIndex = Mathf.FloorToInt(segmentT);
         segmentT -= segmentIndex;
 
         // Ensure index stays within bounds
-        if (segmentIndex >= controlPoints.Length - 3)
+        if (segmentIndex >= _controlPoints.Length - 3)
         {
-            segmentIndex = controlPoints.Length - 4;
+            segmentIndex = _controlPoints.Length - 4;
         }
 
-        Vector3 p0 = controlPoints[segmentIndex];
-        Vector3 p1 = controlPoints[segmentIndex + 1];
-        Vector3 p2 = controlPoints[segmentIndex + 2];
-        Vector3 p3 = controlPoints[segmentIndex + 3];
+        Vector3 p0 = _controlPoints[segmentIndex];
+        Vector3 p1 = _controlPoints[segmentIndex + 1];
+        Vector3 p2 = _controlPoints[segmentIndex + 2];
+        Vector3 p3 = _controlPoints[segmentIndex + 3];
 
         // Catmull-Rom interpolation formula
         float t2 = segmentT * segmentT;

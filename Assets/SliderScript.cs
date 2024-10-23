@@ -42,30 +42,30 @@ public class SliderScript : MonoBehaviour
         }
     }
 
-    public void SetCurveType(CurveType curveType, List<Vector3> controlPoints, float arcLength)
+    public void SetCurveType(CurveType curveType, List<Vector3> controlPoints, float unityLength)
     {
-        _arcLength = arcLength;  // Set arc length from passed value
+        _arcLength = unityLength;  // Set arc length from passed value
         switch (curveType)
         {
             case CurveType.Bezier:
-                _curve = new BezierCurve(controlPoints.ToArray());
-                infill_curve = new BezierCurve(controlPoints.ToArray());
+                _curve = new BezierCurve(controlPoints.ToArray(), unityLength);
+                infill_curve = new BezierCurve(controlPoints.ToArray(), unityLength);
                 break;
             case CurveType.CatmullRom:
-                _curve = new CatmullRomCurve(controlPoints.ToArray());
-                infill_curve = new CatmullRomCurve(controlPoints.ToArray());
+                _curve = new CatmullRomCurve(controlPoints.ToArray(), unityLength);
+                infill_curve = new CatmullRomCurve(controlPoints.ToArray(), unityLength);
                 break;
             case CurveType.Linear:
-                _curve = new LinearCurve(controlPoints.ToArray());
-                infill_curve = new LinearCurve(controlPoints.ToArray());
+                _curve = new LinearCurve(controlPoints.ToArray(), unityLength);
+                infill_curve = new LinearCurve(controlPoints.ToArray(), unityLength);
                 break;
             case CurveType.PerfectCircle:
-                _curve = new PerfectCircleCurve(controlPoints.ToArray(), arcLength);
-                infill_curve = new PerfectCircleCurve(controlPoints.ToArray(), arcLength);
+                _curve = new PerfectCircleCurve(controlPoints.ToArray(), unityLength);
+                infill_curve = new PerfectCircleCurve(controlPoints.ToArray(), unityLength);
                 break;
-            default:
-                Debug.LogWarning("Unknown curve type: " + curveType);
-                break;
+            // default:
+            //     Debug.LogWarning("Unbekannter Kurventyp: " + curveType);
+            //     break;
         }
     }
 

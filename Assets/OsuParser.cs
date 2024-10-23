@@ -4,9 +4,9 @@ using UnityEngine;
 
 public class OsuParser : MonoBehaviour
 {
-    public AudioSource
-        audioSource; // Reference to the song's audio source //TODO decide based on menu selection and from parser
-
+    private const int k_OsuWidth = 512;
+    private const int k_OsuHeight = 384;
+    public AudioSource audioSource; // Reference to the song's audio source //TODO decide based on menu selection and from parser
     public GameObject dotPrefab; // Prefab for the dot
     public GameObject sliderPrefab; // Prefab for the slider
     public GameObject spinnerPrefab; // Prefab for the spinner
@@ -106,44 +106,66 @@ public class OsuParser : MonoBehaviour
                 var time = float.Parse(data[2]) / 1000;
 
                 var type = int.Parse(data[3]);
-                
+
                 // Check if this hit object starts a new combo
-                if ((type & 4) > 0)
-                {
-                    comboIndex++;  
-                }
                 // Apply the correct color based on comboIndex
+                if ((type & 3) > 0) comboIndex++;
                 var colorIndex = (comboIndex % comboColors.Count) + 1;  // Loop through combo colors
                 var color = comboColors.ContainsKey(colorIndex) ? comboColors[colorIndex] : Color.white;
-                
+
                 if ((type & 1) > 0) // Check if it's a hit circle
                 {
-                    _hitObjects.Add(new Circle(OsuToUnityCoordinates(x, y), time,color));
+                    _hitObjects.Add(new Circle(OsuToUnityCoordinates(x,y), time, color));
                 }
                 else if ((type & 2) > 0) // Check if it's a slider
                 {
                     var sliderData = data[5]; // L|291:77, P|...
-                    var arcLength = float.Parse(data[7]);
-                    _hitObjects.Add(new Slider(OsuToUnityCoordinates(x, y), time, sliderData, arcLength,color));
+                    var pixelLength = float.Parse(data[7]);
+                    _hitObjects.Add(new Slider(OsuToUnityCoordinates(x,y), time, sliderData, OsuToUnityLength(pixelLength), color));
                 }
-                else if ((type & 8) > 0) // Check if it's a spinner
+                else if ((type & 4) > 0) // Check if it's a spinner
                 {
-                    _hitObjects.Add(new Spinner(OsuToUnityCoordinates(x, y), time,color));
+                    _hitObjects.Add(new Spinner(OsuToUnityCoordinates(k_OsuWidth / 2, k_OsuHeight / 2), time, color));
                 }
             }
         }
     }
 
+    float OsuToUnityLength(float osuPixelLength)
+    {
+        // Berechnung der Höhe und Breite der Kamera in Unity-Einheiten
+        var cameraHeight = 2f * gameCamera.orthographicSize;  // Ortographic Size * 2 für die gesamte Höhe
+        var cameraWidth = cameraHeight * gameCamera.aspect;   // Breite = Höhe * Seitenverhältnis
+
+        // Berechnung der Skalierung von Pixeln zur Weltgröße
+        var pixelSizeX = cameraWidth / k_OsuWidth;
+        var pixelSizeY = cameraHeight / k_OsuHeight;
+
+        // Berechnung des Verhältnisses für osu! Pixel zu Unity-Einheiten
+        // Hier nimmst du den Mittelwert, falls die Pixel nicht quadratisch skaliert
+        var osuToUnityScale = (pixelSizeX + pixelSizeY) / 2f;
+
+        // Umrechnung der osu! Pixel Länge auf Unity Länge
+        var unityLength = osuPixelLength * osuToUnityScale;
+
+        // Debug.Log("UnityLength: " + unityLength);
+        return unityLength;
+        
+    }
+    
     Vector3 OsuToUnityCoordinates(int xOsu, int yOsu)
     {
         // Step 1: Normalize the osu coordinates (0 to 1 range)
-        var xNorm = xOsu / 512f;
-        var yNorm = yOsu / 384f;
+        var xNorm = xOsu * 1f / k_OsuWidth;
+        var yNorm = yOsu * 1f / k_OsuHeight;
 
         // Step 2: Calculate Unity's camera dimensions
         var cameraHeight = 2f * gameCamera.orthographicSize;
         var cameraWidth = cameraHeight * gameCamera.aspect;
-
+        
+        // Debug.Log("AspectRatio: " + gameCamera.aspect);
+        // 1.7777778 = 16:9
+        
         // Step 3: Map normalized osu coordinates to Unity's world coordinates
         var xUnity = (xNorm - 0.5f) * cameraWidth;
         var yUnity = (yNorm - 0.5f) * cameraHeight;
@@ -237,26 +259,20 @@ public class OsuParser : MonoBehaviour
             case "P":
                 curveType = CurveType.PerfectCircle;
                 break;
-            default:
-                Debug.LogWarning("Unbekannter Kurventyp: " + segments[0]);
-                break;
+            // default:
+            //     Debug.LogWarning("Unbekannter Kurventyp: " + segments[0]);
+            //     break;
         }
 
         // Darauffolgende Teile sind die Kontrollpunkte
         for (var i = 1; i < segments.Length; i++)
         {
             var coords = segments[i].Split(':');
-            if (coords.Length == 2)
-            {
-                var xOsu = int.Parse(coords[0]);
-                var yOsu = int.Parse(coords[1]);
-                var point = OsuToUnityCoordinates(xOsu, yOsu);
-                points.Add(point);
-            }
-            else
-            {
-
-            }
+            if (coords.Length != 2) continue;
+            var xOsu = int.Parse(coords[0]);
+            var yOsu = int.Parse(coords[1]);
+            var point = OsuToUnityCoordinates(xOsu, yOsu);
+            points.Add(point);
         }
 
         return points;
@@ -292,7 +308,7 @@ public class OsuParser : MonoBehaviour
             this.time = time;
             this.beatLength = beatLength;
             this.meter = meter;
-            this.sliderMultiplier = sliderMultiplier;
+            // this.sliderMultiplier = sliderMultiplier;
             this.inherited = inherited;
         }
     }

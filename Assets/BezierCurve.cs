@@ -2,36 +2,59 @@
 
 public class BezierCurve : ICurve
 {
-    private Vector3[] controlPoints;
-    private int numPoints = 50;  // Anzahl der zu zeichnenden Punkte auf der Kurve
+    private readonly Vector3[] _controlPoints;
+    private const int k_NumPoints = 50;
+    private readonly float _unityLength;
 
-    public BezierCurve(Vector3[] controlPoints)
+    public BezierCurve(Vector3[] controlPoints, float unityLength)
     {
-        this.controlPoints = controlPoints;
+        _controlPoints = controlPoints;
+        _unityLength = unityLength;
     }
 
     public void Draw(LineRenderer lineRenderer)
     {
-        Vector3[] positions = new Vector3[numPoints];
-        for (int i = 0; i < numPoints; i++)
+        Vector3[] positions = new Vector3[k_NumPoints];
+        float currentLength = 0.0f;
+        Vector3 previousPoint = CalculateBezierPoint(0);
+        positions[0] = previousPoint;
+        int numValidPoints = 1;
+
+        for (int i = 1; i < k_NumPoints; i++)
         {
-            float t = i / (float)(numPoints - 1);
-            positions[i] = CalculateBezierPoint(t);
+            float t = i / (float)(k_NumPoints - 1);
+            Vector3 point = CalculateBezierPoint(t);
+            float segmentLength = Vector3.Distance(previousPoint, point);
+
+            if (currentLength + segmentLength > _unityLength)
+            {
+                float remainingLength = _unityLength - currentLength;
+                Vector3 direction = (point - previousPoint).normalized;
+                positions[numValidPoints] = previousPoint + direction * remainingLength;
+                numValidPoints++;
+                break;
+            }
+
+            positions[numValidPoints] = point;
+            numValidPoints++;
+            currentLength += segmentLength;
+            previousPoint = point;
         }
-        lineRenderer.positionCount = numPoints;
+
+        lineRenderer.positionCount = numValidPoints;
         lineRenderer.SetPositions(positions);
     }
 
     private Vector3 CalculateBezierPoint(float t)
     {
         Vector3 point = Vector3.zero;
-        int n = controlPoints.Length - 1;
-        
+        int n = _controlPoints.Length - 1;
+
         for (int i = 0; i <= n; i++)
         {
             float binomialCoeff = BinomialCoefficient(n, i);
             float term = binomialCoeff * Mathf.Pow(t, i) * Mathf.Pow(1 - t, n - i);
-            point += term * controlPoints[i];
+            point += term * _controlPoints[i];
         }
 
         return point;
@@ -43,7 +66,7 @@ public class BezierCurve : ICurve
             return 0;
         if (k == 0 || k == n)
             return 1;
-        
+
         int c = 1;
         for (int i = 0; i < k; i++)
         {
