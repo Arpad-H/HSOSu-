@@ -36,7 +36,7 @@ public class Menu : MonoBehaviour
         double borderScores = highscoreTable.getBorderScores();
         double score = (double) PlayerPrefs.GetInt("Score");
         
-        if(score >= borderScores){
+        if(score >= borderScores && score > 0){
             popUpPanel.transform.Find("scoreText").GetComponent<Text>().text = score.ToString();
 
             popUpPanel.SetActive(true);
