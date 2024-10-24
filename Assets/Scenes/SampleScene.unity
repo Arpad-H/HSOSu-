@@ -558,7 +558,7 @@ MonoBehaviour:
   audioSource: {fileID: 1150343859}
   dotPrefab: {fileID: 358770297753055203, guid: 80b5b236d61b4e64e9ad73e0f960b276, type: 3}
   sliderPrefab: {fileID: 3243357798010809807, guid: f7fd43b96acabcf438cc092a6baa478b, type: 3}
-  spinnerPrefab: {fileID: 2013330752440249520, guid: 15b9f7ab58b62184a999b83cf0cac09f, type: 3}
+  spinnerPrefab: {fileID: 2013330752440249520, guid: 71bdedc217ae93c47985cd18beca2525, type: 3}
   gameCamera: {fileID: 0}
   score: 0
   popUpPanel: {fileID: 0}
