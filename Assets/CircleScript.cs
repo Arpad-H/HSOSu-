@@ -1,8 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using DefaultNamespace;
 using UnityEngine;
 
-public class CircleScript : MonoBehaviour
+public class CircleScript : MonoBehaviour, Interactable
 {
     public delegate void ObjectDestroyed(float remainingLifespan);
 
@@ -11,7 +12,8 @@ public class CircleScript : MonoBehaviour
 
     public GameObject border;
     public GameObject hitbox;
-    private float ttl = 2f;
+    public GameObject filling;
+    private float ttl = 5f;
     private float maxLifespan;
     private Vector3 initBorderScale;
 
@@ -31,46 +33,35 @@ public class CircleScript : MonoBehaviour
         if (ttl <= 0f) Destroy(this.gameObject);
         ttl = ttl - Time.deltaTime;
 
-        border.transform.localScale = Vector3.Lerp(Vector3.zero, initBorderScale, ttl / maxLifespan);
+        border.transform.localScale = Vector3.Lerp(hitbox.transform.localScale, initBorderScale, ttl / maxLifespan);
+        
 
-        if (ttl <= 0f)
-        {
-            Destroy(this.gameObject);
-        }
-
-
-        if (Input.GetKeyDown("space"))
-        {
-            Interact();
-        }
+       
     }
+    
 
-    private void OnTriggerEnter2D(Collider2D other)
+    public void KeyDown()
     {
-        hovered = true;
-        Debug.Log("Triggered by: " + other.name);
-        // Add your functionality here
-    }
-
-    private void OnTriggerExit2D(Collider2D other)
-    {
-        hovered = false;
-    }
-
-    private void Interact()
-    {
-        if (hovered)
-        {
             OnObjectDestroyed?.Invoke(ttl);
-        }
-
-        Destroy(this.gameObject);
+            Destroy(this.gameObject);
+      
     }
 
     public void SetColor(Color c)
     {
         border.GetComponent<SpriteRenderer>().color = c;
-        hitbox.GetComponent<SpriteRenderer>().color = c;
+        //hitbox.GetComponent<SpriteRenderer>().color = c;
+        filling.GetComponent<SpriteRenderer>().color = c;
+        
+    }
+
+    public HitObject GetTypeOfHitObject()
+    {
+        return HitObject.Dot;
+    }
+
+    public void KeyUp()
+    {
         
     }
 

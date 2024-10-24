@@ -9,7 +9,6 @@ public class PerfectCircleCurve : ICurve
 
     public PerfectCircleCurve(Vector3[] controlPoints, float arcLength)
     {
-       Debug.Log(arcLength);
         
        
         _controlPoints = controlPoints;

@@ -1,7 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Numerics;
 using Unity.VisualScripting;
 using UnityEngine;
+using Quaternion = UnityEngine.Quaternion;
+using Vector3 = UnityEngine.Vector3;
 using UnityEngine.UI;
 
 public class OsuParser : MonoBehaviour
@@ -149,7 +152,7 @@ public class OsuParser : MonoBehaviour
 
                 var x = int.Parse(data[0]);
                 var y = int.Parse(data[1]);
-                var time = float.Parse(data[2]) / 1000;
+                var time = (float.Parse(data[2]) / 1000) - 10; //TOODO REMOVE THE TIMESKIP
 
                 var type = int.Parse(data[3]);
 
@@ -239,7 +242,7 @@ public class OsuParser : MonoBehaviour
 
     void SpawnSpinner(Vector3 position)
     {
-        Instantiate(spinnerPrefab, position, Quaternion.identity);
+        Instantiate(spinnerPrefab, Vector3.zero, Quaternion.identity);
     }
 
 
@@ -378,26 +381,38 @@ public class OsuParser : MonoBehaviour
         }
     }
 
-    /*public void LevelEnd()
-    {
-        Debug.Log("awake");
-        // List<double> borderScores = highscoreTable.getBorderScores();
-        
-        //if(gameManager.score <= borderScores[0] && gameManager.score >= borderScores[1]){
+     /*public void LevelEnd()
+     {
+         Debug.Log("awake");
+         // List<double> borderScores = highscoreTable.getBorderScores();
+         
+         //if(gameManager.score <= borderScores[0] && gameManager.score >= borderScores[1]){
 
 
-        score = 500;//gameManager.score;
-        score = (double) GameObject.Find("GameManager").getComponent<GameManager>().score;
-        popUpPanel.transform.Find("scoreText").GetComponent<Text>().text = score.ToString();
+         score = 500;//gameManager.score;
+         score = (double) GameObject.Find("GameManager").getComponent<GameManager>().score;
+         popUpPanel.transform.Find("scoreText").GetComponent<Text>().text = score.ToString();
 
-        popUpPanel.SetActive(true);
-        /*MainMenu.SetActive(false);
-        Next.SetActive(false);
-        Previous.SetActive(false);
-        ScrollView.SetActive(false);
+         popUpPanel.SetActive(true);
+         /*MainMenu.SetActive(false);
+         Next.SetActive(false);
+         Previous.SetActive(false);
+         ScrollView.SetActive(false);
 
-        //highscoreTable.AddHighscoreEntry(score, inputField.playername);
+         //highscoreTable.AddHighscoreEntry(score, inputField.playername);
 
-        //}
-    }*/
+         //}
+     }*/
+     private static string GetArg(string name)
+     {
+         var args = System.Environment.GetCommandLineArgs();
+         for (int i = 0; i < args.Length; i++)
+         {
+             if (args[i] == name && args.Length > i + 1)
+             {
+                 return args[i + 1];
+             }
+         }
+         return null;
+     }
 }

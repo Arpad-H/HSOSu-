@@ -3,16 +3,20 @@ using UnityEngine;
 
 public class SliderScript : MonoBehaviour
 {
-    private float _ttl = 1f;
+    private float _ttl = 5f;
     private float maxTtl;// Total time for the sphere to travel
     private ICurve _curve;
     private ICurve infill_curve;
     public LineRenderer _lineRenderer;
     public LineRenderer infill;
     public GameObject sphere;
-
+    public GameObject sphereHolder;
+    float circumference = 2 * Mathf.PI * 30;
+    private float rotationAmount = 0;
     private float _arcLength;
     private float _elapsedTime;
+    bool hovered = false;
+    bool clicked = false;
 
     void Start()
     {
@@ -40,6 +44,8 @@ public class SliderScript : MonoBehaviour
             // Move the sphere along the curve based on the time elapsed
             MoveSphereAlongCurve(_elapsedTime / maxTtl);  // 5f is the initial _ttl
         }
+        
+       
     }
 
     public void SetCurveType(CurveType curveType, List<Vector3> controlPoints, float unityLength)
@@ -75,13 +81,13 @@ public class SliderScript : MonoBehaviour
     private void SetLineRenderer()
     {
         _lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
-        _lineRenderer.startWidth = 50f;
-        _lineRenderer.endWidth = 50f;
+        _lineRenderer.startWidth = 50f * transform.localScale.x;
+        _lineRenderer.endWidth = 50f* transform.localScale.x;
 
-        infill.startWidth = 40f;
-        infill.endWidth = 40f;
-        infill.startColor = new Color(0f, 0f, 0f, 1f);
-        infill.endColor = new Color(0f, 0f, 0f, 1f);
+        infill.startWidth = 40f* transform.localScale.x;
+        infill.endWidth = 40f* transform.localScale.x;
+        _lineRenderer.startColor = new Color(1f, 01, 1f, 1f);
+        _lineRenderer.endColor = new Color(1f, 1f, 1f, 1f);
     }
 
     public void SetupSphere()
@@ -91,15 +97,24 @@ public class SliderScript : MonoBehaviour
 
     public void SetColor(Color c)
     {
-        _lineRenderer.startColor = c;
-        _lineRenderer.endColor = c;
+        infill.startColor = c;
+        infill.endColor = c;
+        
+        sphere.GetComponent<MeshRenderer>().material.color = c;
     }
 
     private void MoveSphereAlongCurve(float t)
     {
+        Vector3 previousPosition = sphere.transform.position;
         // Interpolates t based on total TTL (from 0 to 1) and moves the sphere along the curve
         Vector3 newPosition = _curve.GetPointAtTime(Mathf.Clamp01(t));
-        sphere.transform.position = newPosition;
+        float distanceMoved = Vector3.Distance(previousPosition, newPosition);
+        rotationAmount = (distanceMoved / circumference) * 360f;
+        
+        //sphere.transform.LookAt(newPosition);
+        sphere.transform.Rotate(0, -rotationAmount, 0);
+        sphereHolder.transform.LookAt(newPosition);
+        sphereHolder.transform.position = newPosition;
     }
 
     private float CalculateArcLength(ICurve curve)
@@ -118,5 +133,16 @@ public class SliderScript : MonoBehaviour
         }
 
         return length;
+    }
+
+    public float GetTTL()
+    {
+        return _ttl;
+    }
+
+
+    public float GetMaxTTL()
+    {
+        return maxTtl;
     }
 }

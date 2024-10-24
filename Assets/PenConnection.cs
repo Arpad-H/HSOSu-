@@ -43,11 +43,14 @@ public class PenConnection : MonoBehaviour
     UdpClient udpClient;
     IPEndPoint remoteEndPoint;
     public GameObject cursorDot;
+    public CursorScript cursorScript;
     CultureInfo en_us = CultureInfo.GetCultureInfo("en-US");
     private float orthoSize;
     private float aspectRatio;
     private float height;
     private float width;
+    
+   
     // public Camera camera;
 
 
@@ -63,6 +66,7 @@ public class PenConnection : MonoBehaviour
     void Start()
     {
         cursorDot = GameObject.Find("cursorDot");
+        cursorScript = cursorDot.GetComponent<CursorScript>();
         udpClient = new UdpClient(8081);
         remoteEndPoint = new IPEndPoint(IPAddress.Any, 8081);
     }
@@ -92,22 +96,36 @@ public class PenConnection : MonoBehaviour
             // Use the input to control the game
             // Debug.Log("Received: " + message); 
             String[] stdfs = (message.Split(";"));
-            tilltY = float.Parse(stdfs[3], en_us.NumberFormat);
-            tilltX = float.Parse(stdfs[2], en_us.NumberFormat);
-            penX = float.Parse(stdfs[1], en_us.NumberFormat);
-            penY = float.Parse(stdfs[0], en_us.NumberFormat)-5;
-            Debug.Log("penX: " +penX + "penY: " + penY);
-            Debug.Log("tilltX: " + tilltX + "tilltY: " + tilltY);
-            penX = Remap(penX, 0, 83, -8.4f, 9.4f);
-            penY = Remap(penY, 0, 118, -4.5f, 5.5f);
-            Vector3 pos = new Vector3(penX, penY, 0.0f);
-            //x = -10 + pos.x * 20;
-            //y = -5 + pos.y * 10;
-            //pos.x = x;
-            //pos.y = y;
-            cursorDot.transform.localPosition = pos;
-            // Debug.Log(pos);
-            // Instantiate(cursorDot, pos, Quaternion.identity);
+            if (stdfs[0] == "UP")
+            {
+                cursorScript.penDown = false;
+            }
+
+            if (stdfs[0] == "DOWN")
+            {
+                cursorScript.penDown = true;
+            }
+            else if (stdfs[0] == "POS")
+            {
+                tilltY = float.Parse(stdfs[4], en_us.NumberFormat);
+                tilltX = float.Parse(stdfs[3], en_us.NumberFormat);
+                penX = float.Parse(stdfs[2], en_us.NumberFormat);
+                penY = float.Parse(stdfs[1], en_us.NumberFormat)-5;
+                // Debug.Log("penX: " +penX + "penY: " + penY);
+                // Debug.Log("tilltX: " + tilltX + "tilltY: " + tilltY);
+                penX = Remap(penX, 0, 83, -620f, 620f);
+                penY = Remap(penY, 0, 118, -420f, 420f);
+                Vector3 pos = new Vector3(penX, penY, -160f);
+           
+                //x = -10 + pos.x * 20;
+                //y = -5 + pos.y * 10;
+                //pos.x = x;
+                //pos.y = y;
+                cursorDot.transform.localPosition = pos;
+                // Debug.Log(pos);
+                // Instantiate(cursorDot, pos, Quaternion.identity);
+            }
+           
         }
     }
 

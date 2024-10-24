@@ -20,6 +20,7 @@ public class CanvasManager : MonoBehaviour
 
     public void UpdateScore(int score)
     {
-        scoreText.text = "Score: "+score.ToString();
+        Debug.Log(score);
+        scoreText.text = "Score: "+score;
     }
 }
