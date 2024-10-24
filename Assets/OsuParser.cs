@@ -4,63 +4,62 @@ using UnityEngine;
 using Quaternion = UnityEngine.Quaternion;
 using Vector3 = UnityEngine.Vector3;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class OsuParser : MonoBehaviour
 {
-    private float playfieldHeight; 
-    private float playfieldWidth;
-    private float osuScale; 
-    private const int k_OsuWidth = 512;
-    private const int k_OsuHeight = 384;
+    private const int KOsuWidth = 512;
+    private const int KOsuHeight = 384;
     public Canvas canvas;
-    public AudioSource audioSource; // Reference to the song's audio source //TODO decide based on menu selection and from parser
+    public AudioSource audioSource; // Reference to the song's audio source
     public GameObject dotPrefab; // Prefab for the dot
     public GameObject sliderPrefab; // Prefab for the slider
     public GameObject spinnerPrefab; // Prefab for the spinner
-    private Image image;
+    private Image _image;
     private readonly List<HitObject> _hitObjects = new List<HitObject>();
     List<TimingPoint> timingPoints = new List<TimingPoint>();
     Dictionary<int, Color> comboColors = new Dictionary<int, Color>();
     public Camera gameCamera;
     public double score;
-    public GameObject popUpPanel;
-    public InputField inputField;
-   
-    void Start()
+
+    private void Start()
     {
-        image = FindObjectOfType<Image>();
-        image = image.canvas.rootCanvas.gameObject.GetComponent<Image>();
+        // Abonniere das Szene-geladen-Ereignis
+        // SceneManager.sceneLoaded += OnSceneLoaded;
+        _image = FindObjectOfType<Image>();
+        _image = _image.canvas.rootCanvas.gameObject.GetComponent<Image>();
         audioSource = FindObjectOfType<AudioSource>();
         if (audioSource == null)
         {
             Debug.LogError("Audio source not found");
             audioSource = gameObject.AddComponent<AudioSource>();
         }
+
         var number = PlayerPrefs.HasKey("Song") ? PlayerPrefs.GetInt("Song") : 1;
         ParseOsuFile("Assets/Resources/Songfiles/song" + number + ".osu", out var audioFile, out var background);
         audioSource.clip = Resources.Load<AudioClip>(audioFile);
-        Debug.Log(background);
-        image.sprite = Resources.Load<Sprite>(background);
+        _image.sprite = Resources.Load<Sprite>(background);
         if (audioSource.clip == null)
         {
             Debug.LogError("Audio clip not found.\t" + audioFile);
         }
+
         audioSource.clip.LoadAudioData();
         audioSource.Play();
         StartCoroutine(SpawnObjects());
     }
 
-    void ParseOsuFile(string path, out string audioFile, out string background)
+    private void ParseOsuFile(string path, out string audioFile, out string background)
     {
         string[] lines = System.IO.File.ReadAllLines(path);
         bool inHitObjects = false;
         bool inTimingPoints = false;
         bool inColours = false;
-        int comboIndex = 0;  // To track the current combo index
+        int comboIndex = 0; // To track the current combo index
 
         audioFile = "Songs/audio";
         background = "Backgrounds/background";
-        
+
         foreach (var line in lines)
         {
             if (line.StartsWith("0,0,\""))
@@ -72,6 +71,7 @@ public class OsuParser : MonoBehaviour
                 background = background[..index];
                 continue;
             }
+
             if (line.StartsWith("AudioFilename: "))
             {
                 audioFile = line.Replace("AudioFilename: ", "Songs/");
@@ -88,7 +88,7 @@ public class OsuParser : MonoBehaviour
                 continue;
             }
 
-            
+
             // Check if we've reached the [TimingPoints] section
             if (line.StartsWith("[TimingPoints]"))
             {
@@ -104,6 +104,7 @@ public class OsuParser : MonoBehaviour
                 inHitObjects = true;
                 continue;
             }
+
             // Parse the [Colours] section
             if (inColours && line.StartsWith("Combo"))
             {
@@ -112,16 +113,16 @@ public class OsuParser : MonoBehaviour
                     inColours = false;
                     continue;
                 }
-                
+
                 var split = line.Split(':');
-                var comboNumber = int.Parse(split[0].Substring(5));  // Get the combo number (e.g., Combo1 -> 1)
+                var comboNumber = int.Parse(split[0].Substring(5)); // Get the combo number (e.g., Combo1 -> 1)
                 var colorValues = split[1].Trim().Split(',');
                 var color = new Color(
                     float.Parse(colorValues[0]) / 255f,
                     float.Parse(colorValues[1]) / 255f,
                     float.Parse(colorValues[2]) / 255f
                 );
-                comboColors[comboNumber] = color;  // Store combo color
+                comboColors[comboNumber] = color; // Store combo color
             }
 
             if (inTimingPoints)
@@ -131,6 +132,7 @@ public class OsuParser : MonoBehaviour
                     inTimingPoints = false;
                     continue;
                 }
+
                 string[] data = line.Split(',');
 
                 float time = int.Parse(data[0]) / 1000f; // Time in seconds
@@ -140,7 +142,7 @@ public class OsuParser : MonoBehaviour
 
                 bool inherited = beatLength < 0; // Inherited timing points have negative beatLength
 
-                timingPoints.Add(new TimingPoint(time, beatLength,meter, inherited));
+                timingPoints.Add(new TimingPoint(time, beatLength, meter, inherited));
             }
 
 
@@ -167,17 +169,18 @@ public class OsuParser : MonoBehaviour
 
                 if ((type & 1) > 0) // Check if it's a hit circle
                 {
-                    _hitObjects.Add(new Circle(OsuToUnityCoordinates(x,y), time, color));
+                    _hitObjects.Add(new Circle(OsuToUnityCoordinates(x, y), time, color));
                 }
                 else if ((type & 2) > 0) // Check if it's a slider
                 {
                     var sliderData = data[5]; // L|291:77, P|...
                     var pixelLength = float.Parse(data[7]);
-                    _hitObjects.Add(new Slider(OsuToUnityCoordinates(x,y), time, sliderData, OsuToUnityLength(pixelLength), color));
+                    _hitObjects.Add(new Slider(OsuToUnityCoordinates(x, y), time, sliderData,
+                        OsuToUnityLength(pixelLength), color));
                 }
                 else if ((type & 4) > 0) // Check if it's a spinner
                 {
-                    _hitObjects.Add(new Spinner(OsuToUnityCoordinates(k_OsuWidth / 2, k_OsuHeight / 2), time, color));
+                    _hitObjects.Add(new Spinner(OsuToUnityCoordinates(KOsuWidth / 2, KOsuHeight / 2), time, color));
                 }
             }
         }
@@ -187,12 +190,12 @@ public class OsuParser : MonoBehaviour
     {
         return osuLen;
     }
-    
+
     Vector3 OsuToUnityCoordinates(int xOsu, int yOsu)
     {
-        
-        yOsu = k_OsuHeight / 2 - yOsu; // Flip Y axis
-        xOsu -= k_OsuWidth / 2;
+
+        yOsu = KOsuHeight / 2 - yOsu; // Flip Y axis
+        xOsu -= KOsuWidth / 2;
         return new Vector3(xOsu, yOsu, 0);
     }
 
@@ -224,8 +227,8 @@ public class OsuParser : MonoBehaviour
                     float adjustedArcLength = slider.ArcLength;
                     SpawnSlider(slider.position, slider.PathData, adjustedArcLength, slider.color);
                     break;
-                case Spinner spinner:
-                    SpawnSpinner(spinner.position);
+                case Spinner:
+                    SpawnSpinner();
                     break;
             }
         }
@@ -233,19 +236,19 @@ public class OsuParser : MonoBehaviour
         LevelEnd();
     }
 
-    void SpawnDot(Vector3 position,Color color)
+    private void SpawnDot(Vector3 position, Color color)
     {
         var dot = Instantiate(dotPrefab, position, Quaternion.identity);
         dot.GetComponent<CircleScript>().SetColor(color);
     }
 
-    void SpawnSpinner(Vector3 position)
+    private void SpawnSpinner()
     {
         Instantiate(spinnerPrefab, Vector3.zero, Quaternion.identity);
     }
 
 
-    void SpawnSlider(Vector3 position, string pathData, float length,Color color)
+    private void SpawnSlider(Vector3 position, string pathData, float length, Color color)
     {
         var sliderObject = Instantiate(sliderPrefab, position, Quaternion.identity);
 
@@ -259,7 +262,7 @@ public class OsuParser : MonoBehaviour
 
     }
 
-    List<Vector3> ParsePathData(string pathData, out CurveType curveType)
+    private List<Vector3> ParsePathData(string pathData, out CurveType curveType)
     {
         var points = new List<Vector3>();
         var segments = pathData.Split('|');
@@ -328,7 +331,7 @@ public class OsuParser : MonoBehaviour
         public float sliderMultiplier;
         public bool inherited;
 
-        public TimingPoint(float time, float beatLength,  int meter, bool inherited)
+        public TimingPoint(float time, float beatLength, int meter, bool inherited)
         {
             this.time = time;
             this.beatLength = beatLength;
@@ -345,7 +348,7 @@ public class OsuParser : MonoBehaviour
         public readonly float time;
         public Color color;
 
-        protected HitObject(Vector3 position, float time,Color color)
+        protected HitObject(Vector3 position, float time, Color color)
         {
             this.position = position;
             this.time = time;
@@ -365,7 +368,8 @@ public class OsuParser : MonoBehaviour
         public readonly string PathData;
         public readonly float ArcLength;
 
-        public Slider(Vector3 position, float time, string pathData, float arcLength,Color color) : base(position, time,color)
+        public Slider(Vector3 position, float time, string pathData, float arcLength, Color color) : base(position,
+            time, color)
         {
             PathData = pathData;
             ArcLength = arcLength;
@@ -374,33 +378,16 @@ public class OsuParser : MonoBehaviour
 
     public class Spinner : HitObject
     {
-        public Spinner(Vector3 position, float time,Color color) : base(position, time,color)
+        public Spinner(Vector3 position, float time, Color color) : base(position, time, color)
         {
 
         }
     }
 
-     public void LevelEnd()
-     {
-         Debug.Log("LevelEnd");
-         // List<double> borderScores = highscoreTable.getBorderScores();
-         
-         //if(gameManager.score <= borderScores[0] && gameManager.score >= borderScores[1]){
+    private void LevelEnd()
+    {
+        // PlayerPrefs.SetInt("Score", 50);
+        SceneManager.LoadSceneAsync("Menu");
+    }
 
-
-         score = PlayerPrefs.GetInt("Score");//gameManager.score;
-         // score = (double) GameObject.Find("GameManager").getComponent<GameManager>().score;
-         popUpPanel.transform.Find("scoreText").GetComponent<Text>().text = score.ToString();
-
-         popUpPanel.SetActive(true);
-         // MainMenu.SetActive(false);
-         // Next.SetActive(false);
-         // Previous.SetActive(false);
-         // ScrollView.SetActive(false);
-         //
-         // highscoreTable.AddHighscoreEntry(score, inputField.playername);
-
-         //}
-     }
-  
 }

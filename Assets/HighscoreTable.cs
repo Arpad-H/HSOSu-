@@ -49,7 +49,7 @@ public class HighscoreTable : MonoBehaviour
         _highscoreEntryList = new List<HighscoreEntry>();
         var path = Path.Replace("1", PlayerPrefs.GetInt("Song").ToString());
         var lines = File.ReadAllLines(path);
-        Debug.Log(lines.Length);
+        // Debug.Log(lines.Length);
         foreach (var line in lines)
         {
             var parts = line.Split(' ');
