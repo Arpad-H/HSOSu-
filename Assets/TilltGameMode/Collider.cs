@@ -17,7 +17,12 @@ public class Collider : MonoBehaviour
     }
     private void OnTriggerEnter2D(Collider2D other)
     {
-        // Ausgabe im Debug-Fenster
-        Debug.Log("Ein Objekt hat den Trigger betreten: " + other.gameObject.name);
+        if (other.gameObject.GetComponent<SpriteRenderer>().color 
+            != this.GetComponent<SpriteRenderer>().color)
+        {
+            this.GetComponent<SpriteRenderer>().enabled = false;
+            this.GetComponent<PolygonCollider2D>().enabled = false;
+            this.GetComponent<Spawning>().enabled = false;
+        }
     }
 }
