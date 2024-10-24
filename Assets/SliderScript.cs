@@ -60,9 +60,12 @@ public class SliderScript : MonoBehaviour
                 infill_curve = new LinearCurve(controlPoints.ToArray(), unityLength);
                 break;
             case CurveType.PerfectCircle:
-                _curve = new PerfectCircleCurve(controlPoints.ToArray(), unityLength);
-                infill_curve = new PerfectCircleCurve(controlPoints.ToArray(), unityLength);
+                _curve = new BezierCurve(controlPoints.ToArray(), unityLength);
+                infill_curve = new BezierCurve(controlPoints.ToArray(), unityLength);
                 break;
+                // _curve = new PerfectCircleCurve(controlPoints.ToArray(), unityLength);
+                // infill_curve = new PerfectCircleCurve(controlPoints.ToArray(), unityLength);
+                // break;
             // default:
             //     Debug.LogWarning("Unbekannter Kurventyp: " + curveType);
             //     break;
