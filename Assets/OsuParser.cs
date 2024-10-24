@@ -20,10 +20,6 @@ public class OsuParser : MonoBehaviour
 
     void Start()
     {
-        playfieldHeight = 1080 * 0.8f;
-        playfieldWidth = (4/3) * playfieldHeight;
-        osuScale = Mathf.Min(playfieldWidth / k_OsuWidth, playfieldHeight / k_OsuHeight);
-        
         ParseOsuFile("Assets/song2.osu"); //TODO decide based on menu selection
         StartCoroutine(SpawnObjects());
     }
@@ -141,18 +137,14 @@ public class OsuParser : MonoBehaviour
     float OsuToUnityLength(float osuLen)
     {
         return osuLen;
-        return  (osuLen * osuScale);
     }
     
     Vector3 OsuToUnityCoordinates(int xOsu, int yOsu)
     {
-        yOsu = 480 - yOsu; // Flip Y axis
+        
+        yOsu = k_OsuHeight / 2 - yOsu; // Flip Y axis
+        xOsu -= k_OsuWidth / 2;
         return new Vector3(xOsu, yOsu, 0);
-        float xUnity = (xOsu * osuScale) - (playfieldWidth / 2); // Offset by half width
-        Debug.Log((( yOsu) * osuScale));
-        float yUnity =  (playfieldHeight / 2) - (( yOsu) * osuScale); // Flip Y and center
-
-        return new Vector3(xUnity, yUnity, 0);
     }
 
     IEnumerator SpawnObjects()
