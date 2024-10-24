@@ -32,7 +32,7 @@ public class OsuParser : MonoBehaviour
             audioSource = gameObject.AddComponent<AudioSource>();
         }
         var number = PlayerPrefs.HasKey("Song") ? PlayerPrefs.GetInt("Song") : 1;
-        ParseOsuFile("Assets/song" + number + ".osu", out var audioFile, out var background);
+        ParseOsuFile("Assets/Resources/Songfiles/song" + number + ".osu", out var audioFile, out var background);
         audioSource.clip = Resources.Load<AudioClip>(audioFile);
         Debug.Log(background);
         image.sprite = Resources.Load<Sprite>(background);
