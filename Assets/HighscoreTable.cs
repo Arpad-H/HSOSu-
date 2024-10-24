@@ -11,7 +11,7 @@ public class HighscoreTable : MonoBehaviour
     private Transform entryTemplate; 
     private List<HighscoreEntry> highscoreEntryList;
     private List<Transform> highscoreEntryTransformList;
-    public string path;
+    private string path = "Assets/Highscores/song1.txt";
     
     private void Awake()
     {
@@ -20,13 +20,31 @@ public class HighscoreTable : MonoBehaviour
         
         entryTemplate.gameObject.SetActive(false);
         
-        /*string jsonString = PlayerPrefs.GetString("highscoreTable");
-        Highscores highscores = JsonUtility.FromJson<Highscores>(jsonString);
-        highscoreEntryList = highscores.highscoreEntryList;*/
-        
+        getHighscoreList();
+        highscoreEntryTransformList = new List<Transform>();
+        int x;
+        if (highscoreEntryList.Count < 5)
+        {
+            x = highscoreEntryList.Count;
+        }
+        else
+        {
+            x = 5;
+        }
+        for (int i = 0; i < x; i++)
+        {
+            HighscoreEntry highscoreEntry = highscoreEntryList[i];
+            CreateHighscoreEntryTransform(highscoreEntry, entryContainer, highscoreEntryTransformList);
+        }
+    }
 
-        highscoreEntryList = new List<HighscoreEntry>(); 
+    private void getHighscoreList()
+    {
+        
+        highscoreEntryList = new List<HighscoreEntry>();
+        path = path.Replace("1", PlayerPrefs.GetInt("Song").ToString());
         string[] lines = File.ReadAllLines(path);
+        Debug.Log(lines);
         foreach (string line in lines)
         {
             string[] parts = line.Split(' ');
@@ -41,58 +59,68 @@ public class HighscoreTable : MonoBehaviour
         //sort
         for(int i = 0; i < highscoreEntryList.Count; i++)
         {
-             for(int j = i; j < highscoreEntryList.Count; j++)
-                    {
-                        if (highscoreEntryList[j].score > highscoreEntryList[i].score)
-                        {
-                            HighscoreEntry tmp = highscoreEntryList[i];
-                            highscoreEntryList[i] = highscoreEntryList[j];
-                            highscoreEntryList[j] = tmp;
-                        }
-                    }
-        }
+            for(int j = i; j < highscoreEntryList.Count; j++)
+            {
+                if (highscoreEntryList[j].score > highscoreEntryList[i].score)
+                {
+                    HighscoreEntry tmp = highscoreEntryList[i];
+                    highscoreEntryList[i] = highscoreEntryList[j];
+                    highscoreEntryList[j] = tmp;
+                }
+            }
+        }   
         
-        highscoreEntryTransformList = new List<Transform>();
-        for (int i = 0; i < 5; i++/*HighscoreEntry highscoreEntry in highscoreEntryList*/)
-        {
-            HighscoreEntry highscoreEntry = highscoreEntryList[i];
-            CreateHighscoreEntryTransform(highscoreEntry, entryContainer, highscoreEntryTransformList);
-        }
+       
     }
-    
-    
-    
-    
+
+    public double getBorderScores()
+    {
+        getHighscoreList();
+        double borderScore; 
+        if (highscoreEntryList.Count > 5)
+        {
+             borderScore = highscoreEntryList[0].score;
+        }
+        else
+        {
+            borderScore = 0;
+        }
+
+        Debug.Log("HsELC: " + highscoreEntryList.Count);
+
+        return borderScore;
+
+    }
+
+
+
     private void CreateHighscoreEntryTransform(HighscoreEntry highscoreEntry, Transform container, List<Transform> transformList)
     {
         float templateHeight = 100f;
+        Debug.Log("1");
         
         Transform entryTransform = Instantiate(entryTemplate, container);
         RectTransform entryRectTransform = entryTransform.GetComponent<RectTransform>();
         entryRectTransform.anchoredPosition = new Vector2(0, -templateHeight * transformList.Count);
         entryTransform.gameObject.SetActive(true);
-                    
+        Debug.Log("1");          
         string name = highscoreEntry.name;
         entryTransform.Find("nameText").GetComponent<Text>().text = name;
-                    
+        Debug.Log("1");        
         double points = highscoreEntry.score;
         entryTransform.Find("scoreText").GetComponent<Text>().text = points.ToString();
-        
+        Debug.Log("1");
         transformList.Add(entryTransform);
+        Debug.Log("5");
     }
     
-    private void AddHighscoreEntry(double score, string name)
+    public void AddHighscoreEntry(double score, string name)
     {
-        HighscoreEntry highscoreEntry = new HighscoreEntry(score, name);
         
-        string jsonString = PlayerPrefs.GetString("highscoreTable");
-        Highscores highscores = JsonUtility.FromJson<Highscores>(jsonString);
+        path.Replace("1", PlayerPrefs.GetInt("Song").ToString());
+        string entry = name + " " + score.ToString();
         
-        highscores.highscoreEntryList.Add(highscoreEntry);
-        
-        string json = JsonUtility.ToJson(highscores);
-        PlayerPrefs.SetString("highscoreTable",json);
-        PlayerPrefs.Save();
+       File.AppendAllLines(path, new[] { entry });
     }
     
     
@@ -106,7 +134,7 @@ public class HighscoreTable : MonoBehaviour
     
     //single entry
     [System.Serializable]
-    private class HighscoreEntry 
+    public class HighscoreEntry 
     {
         public double score;
         public string name;
@@ -118,28 +146,6 @@ public class HighscoreTable : MonoBehaviour
         }
     }
 
-   /* public class NameValueReader
-    {
-        public static List<HighscoreEntry> ReadNameNumberPairs(string path)
-        {
-            var list = new List<HighscoreEntry>();
-            string[] lines = File.ReadAllLines(path);
-
-            foreach (string line in lines)
-            {
-                string[] parts = line.Split(' ');
-
-                if (parts.Length == 2 && double.TryParse(parts[1], out double number))
-                {
-                    string name = parts[0];
-                    list.Add(new HighscoreEntry(number, name));
-                }
-
-                return list;
-            }
-        }
-
-    }*/
 }
 
 

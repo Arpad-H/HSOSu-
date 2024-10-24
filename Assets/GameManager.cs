@@ -28,4 +28,7 @@ public class GameManager : MonoBehaviour
         PlayerPrefs.SetInt("Score", score);
         // Add your functionality here (e.g., updating UI, scores, etc.)
     }
+    
+   
+    
 }
