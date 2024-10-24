@@ -1,7 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Numerics;
-using Unity.VisualScripting;
 using UnityEngine;
 using Quaternion = UnityEngine.Quaternion;
 using Vector3 = UnityEngine.Vector3;
@@ -31,6 +29,7 @@ public class OsuParser : MonoBehaviour
     void Start()
     {
         image = FindObjectOfType<Image>();
+        image = image.canvas.rootCanvas.gameObject.GetComponent<Image>();
         audioSource = FindObjectOfType<AudioSource>();
         if (audioSource == null)
         {
