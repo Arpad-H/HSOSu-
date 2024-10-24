@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class OsuParser : MonoBehaviour
@@ -20,11 +21,25 @@ public class OsuParser : MonoBehaviour
 
     void Start()
     {
-        ParseOsuFile("Assets/song2.osu"); //TODO decide based on menu selection
+        audioSource = FindObjectOfType<AudioSource>();
+        if (audioSource == null)
+        {
+            Debug.LogError("Audio source not found");
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+        var number = PlayerPrefs.HasKey("Song") ? PlayerPrefs.GetInt("Song") : 1;
+        ParseOsuFile("Assets/song" + number + ".osu", out var audioFile);
+        audioSource.clip = Resources.Load<AudioClip>(audioFile);
+        if (audioSource.clip == null)
+        {
+            Debug.LogError("Audio clip not found.\t" + audioFile);
+        }
+        audioSource.clip.LoadAudioData();
+        audioSource.Play();
         StartCoroutine(SpawnObjects());
     }
 
-    void ParseOsuFile(string path)
+    void ParseOsuFile(string path, out string audioFile)
     {
         string[] lines = System.IO.File.ReadAllLines(path);
         bool inHitObjects = false;
@@ -32,9 +47,18 @@ public class OsuParser : MonoBehaviour
         bool inColours = false;
         int comboIndex = 0;  // To track the current combo index
 
-    
+        audioFile = "songs/audio";
+        
         foreach (var line in lines)
         {
+            if (line.StartsWith("AudioFilename: "))
+            {
+                audioFile = line.Replace("AudioFilename: ", "songs/");
+                var index = audioFile.LastIndexOf('.');
+                audioFile = audioFile[..index];
+                continue;
+            }
+            
             // Check if we've reached the [Colours] section
             if (line.StartsWith("[Colours]"))
             {

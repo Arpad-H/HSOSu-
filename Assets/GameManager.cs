@@ -25,6 +25,7 @@ public class GameManager : MonoBehaviour
         int points = Mathf.RoundToInt( 100 * (4 - remainingLifespan)) ;
         score += points;
         canvasManager.UpdateScore(score);
+        PlayerPrefs.SetInt("Score", score);
         // Add your functionality here (e.g., updating UI, scores, etc.)
     }
 }
