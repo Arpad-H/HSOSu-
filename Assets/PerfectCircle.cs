@@ -3,12 +3,15 @@
 public class PerfectCircleCurve : ICurve
 {
     private readonly Vector3[] _controlPoints;
-    private float _arcLength;
-    private const int NumCirclePoints = 100;
-    private const float FullCircleDegrees = 360f;
+    private readonly float _arcLength; // Die Länge des Kreisbogens in Pixeln
+    private const int k_NumCirclePoints = 100;
+    private const float k_FullCircleDegrees = 360f;
 
     public PerfectCircleCurve(Vector3[] controlPoints, float arcLength)
     {
+       Debug.Log(arcLength);
+        
+       
         _controlPoints = controlPoints;
         _arcLength = arcLength;
     }
@@ -16,30 +19,41 @@ public class PerfectCircleCurve : ICurve
     public void Draw(LineRenderer lineRenderer)
     {
         if (_controlPoints.Length < 3) return;
+        CalculateCircle(_controlPoints[0], _controlPoints[1], _controlPoints[2], out var center, out var radius);
 
-        var center = (_controlPoints[0] + _controlPoints[1] + _controlPoints[2]) / 3f;
-        var radius = Vector3.Distance(_controlPoints[0], center);
-        
-        int pointCount = Mathf.CeilToInt(NumCirclePoints * (_arcLength / FullCircleDegrees));
-        pointCount = Mathf.Max(2, pointCount); // mindestens zwei Punkte
+        float startAngle = Mathf.Atan2(_controlPoints[0].y - center.y, _controlPoints[0].x - center.x);
+        float endAngle = Mathf.Atan2(_controlPoints[2].y - center.y, _controlPoints[2].x - center.x);
 
-        Vector3[] positions = new Vector3[pointCount];
-        for (int i = 0; i < pointCount; i++)
+        // Winkel zwischen Start- und Endpunkt
+        float angleBetween = Mathf.Abs(endAngle - startAngle);
+        if (angleBetween > Mathf.PI) // Wenn der Winkel mehr als π ist, in den anderen Richtungen umkreisen
         {
-            float angle = i * (_arcLength * Mathf.Deg2Rad) / (pointCount - 1);
-            positions[i] = new Vector3(
-                center.x + Mathf.Cos(angle) * radius,
-                center.y + Mathf.Sin(angle) * radius,
-                center.z); // Für X-Y-Plane in 2D
+            angleBetween = 2 * Mathf.PI - angleBetween;
         }
 
-        lineRenderer.positionCount = pointCount;
-        lineRenderer.SetPositions(positions);
-    }
+        // Maximale Winkelverschiebung aufgrund von arcLength
+        float maxArcAngle = _arcLength / radius; // θ = s / r
 
+        // Limitiere tatsächlich verwendeten Winkelbase
+        float actualAngle = Mathf.Min(angleBetween, maxArcAngle);
+
+        int segmentCount = 100; // Anzahl der Segmente für den Kreisbogen
+        lineRenderer.positionCount = segmentCount;
+
+        for (int i = 0; i < segmentCount; i++)
+        {
+            float t = (float)i / (segmentCount - 1);
+            float angle = startAngle + t * actualAngle * Mathf.Sign(endAngle - startAngle);
+
+            float x = center.x + radius * Mathf.Cos(angle);
+            float y = center.y + radius * Mathf.Sin(angle);
+            lineRenderer.SetPosition(i, new Vector3(x, y, 0));
+        }
+    }
+    
     public Vector3 GetPointAtTime(float t)
     {
-        if (_controlPoints.Length < 3) return _controlPoints[0];  // Invalid circle
+        if (_controlPoints.Length < 3) return _controlPoints[0]; // Invalid circle
 
         // Calculate the center of the circle and the radius
         var center = CalculateCircleCenter(_controlPoints[0], _controlPoints[1], _controlPoints[2]);
@@ -59,33 +73,46 @@ public class PerfectCircleCurve : ICurve
             center.z); // For the X-Y plane, Z remains constant
     }
 
-    private Vector3 CalculateCircleCenter(Vector3 p1, Vector3 p2, Vector3 p3)
+    Vector3 CalculateCircleCenter(Vector3 p1, Vector3 p2, Vector3 p3)
     {
-        // Berechne den Mittelpunkt des Kreises durch die drei Punkte mittels Umkreismethode
+        // Vektorunterschiede
+        var midAB = (p1 + p2) / 2f;
+        var midBC = (p2 + p3) / 2f;
+
+        // Berechnung der Richtungsvektoren
+        var dirAB = new Vector3(-(p2.z - p1.z), 0, p2.x - p1.x);
+        var dirBC = new Vector3(-(p3.z - p2.z), 0, p3.x - p2.x);
+
+        // Kontrolliere für Parallelität
+        if (Vector3.Cross(p2 - p1, p3 - p2).magnitude < Mathf.Epsilon)
+        {
+            throw new System.ArgumentException("Die gegebenen Punkte liegen auf einer Linie.");
+        }
+
+        // Berechnung der Kreuzungspunkte (Orthonormalprojektion auf die Richtungsvektoren)
+        Vector3 a = midAB + dirAB.normalized;
+        Vector3 b = midBC + dirBC.normalized;
+        Vector3 abDirection = b - a;
+        Vector3 center;
+
+        float t = Vector3.Dot(midBC - midAB, abDirection) / abDirection.magnitude;
+        center = midAB + dirAB.normalized * t;
+
+        return center;
+    }
+    
+    private void CalculateCircle(Vector3 p1, Vector3 p2, Vector3 p3, out Vector3 center, out float radius)
+    {
+        // Berechnung des Umkreises (Umkreis der Dreiecks-Punkte) basierend auf den drei Punkten
         Vector3 mid1 = (p1 + p2) / 2;
         Vector3 mid2 = (p2 + p3) / 2;
 
-        Vector3 dir1 = Vector3.Cross(p2 - p1, Vector3.forward).normalized;
-        Vector3 dir2 = Vector3.Cross(p3 - p2, Vector3.forward).normalized;
+        Vector3 dir1 = new Vector3(-(p2 - p1).y, (p2 - p1).x, 0);
+        Vector3 dir2 = new Vector3(-(p3 - p2).y, (p3 - p2).x, 0);
 
-        float a1 = mid1.y - mid2.y;
-        float b1 = mid2.x - mid1.x;
-        float c1 = a1 * mid1.x + b1 * mid1.y;
+        float t = ((mid2.y - mid1.y) * dir2.x - (mid2.x - mid1.x) * dir2.y) / (dir1.x * dir2.y - dir1.y * dir2.x);
 
-        float a2 = dir2.y;
-        float b2 = -dir2.x;
-        float c2 = a2 * mid2.x + b2 * mid2.y;
-
-        float det = a1 * b2 - a2 * b1;
-
-        if (Mathf.Abs(det) < Mathf.Epsilon)
-        {
-            return Vector3.zero; // Wenn Punkte kollinear sind, gib ein Nullvektor zurück
-        }
-
-        float x = (b2 * c1 - b1 * c2) / det;
-        float y = (a1 * c2 - a2 * c1) / det;
-
-        return new Vector3(x, y, 0);
+        center = mid1 + dir1 * t;
+        radius = Vector3.Distance(center, p1);
     }
 }

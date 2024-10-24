@@ -3,16 +3,35 @@
 public class LinearCurve : ICurve
 {
     private Vector3[] controlPoints;
+    private float maxLength;
 
-    public LinearCurve(Vector3[] controlPoints)
+    public LinearCurve(Vector3[] controlPoints, float maxLength)
     {
+        if (controlPoints.Length != 2)
+        {
+            throw new System.ArgumentException("LinearCurve benötigt genau zwei Kontrollpunkte.");
+        }
+
         this.controlPoints = controlPoints;
+        this.maxLength = maxLength;
     }
 
     public void Draw(LineRenderer lineRenderer)
     {
-        lineRenderer.positionCount = controlPoints.Length;
-        lineRenderer.SetPositions(controlPoints);
+        // Berechne die Länge der Linie
+        float totalLength = Vector3.Distance(controlPoints[0], controlPoints[1]);
+
+        if (totalLength > maxLength)
+        {
+            // Skaliere die Linie zur Maxlänge, indem ein entsprechend weit liegender Punkt errechnet wird
+            Vector3 direction = (controlPoints[1] - controlPoints[0]).normalized;
+            controlPoints[1] = controlPoints[0] + direction * maxLength;
+        }
+
+        // Setze die Endpunkte der Linie
+        lineRenderer.positionCount = 2;
+        lineRenderer.SetPosition(0, controlPoints[0]);
+        lineRenderer.SetPosition(1, controlPoints[1]);
     }
     public Vector3 GetPointAtTime(float t)
     {

@@ -1,15 +1,22 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class OsuParser : MonoBehaviour
 {
-    public AudioSource
-        audioSource; // Reference to the song's audio source //TODO decide based on menu selection and from parser
-
+    private float playfieldHeight; 
+    private float playfieldWidth;
+    private float osuScale; 
+    private const int k_OsuWidth = 512;
+    private const int k_OsuHeight = 384;
+    public Canvas canvas;
+    public AudioSource audioSource; // Reference to the song's audio source //TODO decide based on menu selection and from parser
     public GameObject dotPrefab; // Prefab for the dot
     public GameObject sliderPrefab; // Prefab for the slider
     public GameObject spinnerPrefab; // Prefab for the spinner
+    private Image image;
     private readonly List<HitObject> _hitObjects = new List<HitObject>();
     List<TimingPoint> timingPoints = new List<TimingPoint>();
     Dictionary<int, Color> comboColors = new Dictionary<int, Color>();
@@ -17,11 +24,28 @@ public class OsuParser : MonoBehaviour
 
     void Start()
     {
-        ParseOsuFile("Assets/songfile.osu"); //TODO decide based on menu selection
+        image = FindObjectOfType<Image>();
+        audioSource = FindObjectOfType<AudioSource>();
+        if (audioSource == null)
+        {
+            Debug.LogError("Audio source not found");
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+        var number = PlayerPrefs.HasKey("Song") ? PlayerPrefs.GetInt("Song") : 1;
+        ParseOsuFile("Assets/song" + number + ".osu", out var audioFile, out var background);
+        audioSource.clip = Resources.Load<AudioClip>(audioFile);
+        Debug.Log(background);
+        image.sprite = Resources.Load<Sprite>(background);
+        if (audioSource.clip == null)
+        {
+            Debug.LogError("Audio clip not found.\t" + audioFile);
+        }
+        audioSource.clip.LoadAudioData();
+        audioSource.Play();
         StartCoroutine(SpawnObjects());
     }
 
-    void ParseOsuFile(string path)
+    void ParseOsuFile(string path, out string audioFile, out string background)
     {
         string[] lines = System.IO.File.ReadAllLines(path);
         bool inHitObjects = false;
@@ -29,9 +53,28 @@ public class OsuParser : MonoBehaviour
         bool inColours = false;
         int comboIndex = 0;  // To track the current combo index
 
-    
+        audioFile = "Songs/audio";
+        background = "Backgrounds/background";
+        
         foreach (var line in lines)
         {
+            if (line.StartsWith("0,0,\""))
+            {
+                background = line.Replace("0,0,\"", "Backgrounds/");
+                var index = background.LastIndexOf('\"');
+                background = background[..index];
+                index = background.LastIndexOf('.');
+                background = background[..index];
+                continue;
+            }
+            if (line.StartsWith("AudioFilename: "))
+            {
+                audioFile = line.Replace("AudioFilename: ", "Songs/");
+                var index = audioFile.LastIndexOf('.');
+                audioFile = audioFile[..index];
+                continue;
+            }
+
             // Check if we've reached the [Colours] section
             if (line.StartsWith("[Colours]"))
             {
@@ -106,49 +149,42 @@ public class OsuParser : MonoBehaviour
                 var time = float.Parse(data[2]) / 1000;
 
                 var type = int.Parse(data[3]);
-                
+
                 // Check if this hit object starts a new combo
-                if ((type & 4) > 0)
-                {
-                    comboIndex++;  
-                }
                 // Apply the correct color based on comboIndex
+                if ((type & 3) > 0) comboIndex++;
                 var colorIndex = (comboIndex % comboColors.Count) + 1;  // Loop through combo colors
                 var color = comboColors.ContainsKey(colorIndex) ? comboColors[colorIndex] : Color.white;
-                
+
                 if ((type & 1) > 0) // Check if it's a hit circle
                 {
-                    _hitObjects.Add(new Circle(OsuToUnityCoordinates(x, y), time,color));
+                    _hitObjects.Add(new Circle(OsuToUnityCoordinates(x,y), time, color));
                 }
                 else if ((type & 2) > 0) // Check if it's a slider
                 {
                     var sliderData = data[5]; // L|291:77, P|...
-                    var arcLength = float.Parse(data[7]);
-                    _hitObjects.Add(new Slider(OsuToUnityCoordinates(x, y), time, sliderData, arcLength,color));
+                    var pixelLength = float.Parse(data[7]);
+                    _hitObjects.Add(new Slider(OsuToUnityCoordinates(x,y), time, sliderData, OsuToUnityLength(pixelLength), color));
                 }
-                else if ((type & 8) > 0) // Check if it's a spinner
+                else if ((type & 4) > 0) // Check if it's a spinner
                 {
-                    _hitObjects.Add(new Spinner(OsuToUnityCoordinates(x, y), time,color));
+                    _hitObjects.Add(new Spinner(OsuToUnityCoordinates(k_OsuWidth / 2, k_OsuHeight / 2), time, color));
                 }
             }
         }
     }
 
+    float OsuToUnityLength(float osuLen)
+    {
+        return osuLen;
+    }
+    
     Vector3 OsuToUnityCoordinates(int xOsu, int yOsu)
     {
-        // Step 1: Normalize the osu coordinates (0 to 1 range)
-        var xNorm = xOsu / 512f;
-        var yNorm = yOsu / 384f;
-
-        // Step 2: Calculate Unity's camera dimensions
-        var cameraHeight = 2f * gameCamera.orthographicSize;
-        var cameraWidth = cameraHeight * gameCamera.aspect;
-
-        // Step 3: Map normalized osu coordinates to Unity's world coordinates
-        var xUnity = (xNorm - 0.5f) * cameraWidth;
-        var yUnity = (yNorm - 0.5f) * cameraHeight;
-
-        return new Vector3(xUnity, yUnity, 0f); // Z is zero for 2D
+        
+        yOsu = k_OsuHeight / 2 - yOsu; // Flip Y axis
+        xOsu -= k_OsuWidth / 2;
+        return new Vector3(xOsu, yOsu, 0);
     }
 
     IEnumerator SpawnObjects()
@@ -198,7 +234,7 @@ public class OsuParser : MonoBehaviour
     }
 
 
-    void SpawnSlider(Vector3 position, string pathData, float arcLength,Color color)
+    void SpawnSlider(Vector3 position, string pathData, float length,Color color)
     {
         var sliderObject = Instantiate(sliderPrefab, position, Quaternion.identity);
 
@@ -207,7 +243,7 @@ public class OsuParser : MonoBehaviour
         points.Insert(0, new Vector3(position.x, position.y, 0));
 
         var sliderComponent = sliderObject.GetComponent<SliderScript>();
-        sliderComponent.SetCurveType(curveType, points, arcLength);
+        sliderComponent.SetCurveType(curveType, points, length);
         sliderComponent.SetColor(color);
 
     }
@@ -237,26 +273,20 @@ public class OsuParser : MonoBehaviour
             case "P":
                 curveType = CurveType.PerfectCircle;
                 break;
-            default:
-                Debug.LogWarning("Unbekannter Kurventyp: " + segments[0]);
-                break;
+            // default:
+            //     Debug.LogWarning("Unbekannter Kurventyp: " + segments[0]);
+            //     break;
         }
 
         // Darauffolgende Teile sind die Kontrollpunkte
         for (var i = 1; i < segments.Length; i++)
         {
             var coords = segments[i].Split(':');
-            if (coords.Length == 2)
-            {
-                var xOsu = int.Parse(coords[0]);
-                var yOsu = int.Parse(coords[1]);
-                var point = OsuToUnityCoordinates(xOsu, yOsu);
-                points.Add(point);
-            }
-            else
-            {
-
-            }
+            if (coords.Length != 2) continue;
+            var xOsu = int.Parse(coords[0]);
+            var yOsu = int.Parse(coords[1]);
+            var point = OsuToUnityCoordinates(xOsu, yOsu);
+            points.Add(point);
         }
 
         return points;
@@ -292,7 +322,7 @@ public class OsuParser : MonoBehaviour
             this.time = time;
             this.beatLength = beatLength;
             this.meter = meter;
-            this.sliderMultiplier = sliderMultiplier;
+            // this.sliderMultiplier = sliderMultiplier;
             this.inherited = inherited;
         }
     }

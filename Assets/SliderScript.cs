@@ -42,48 +42,51 @@ public class SliderScript : MonoBehaviour
         }
     }
 
-    public void SetCurveType(CurveType curveType, List<Vector3> controlPoints, float arcLength)
+    public void SetCurveType(CurveType curveType, List<Vector3> controlPoints, float unityLength)
     {
-        _arcLength = arcLength;  // Set arc length from passed value
+        _arcLength = unityLength;  // Set arc length from passed value
         switch (curveType)
         {
             case CurveType.Bezier:
-                _curve = new BezierCurve(controlPoints.ToArray());
-                infill_curve = new BezierCurve(controlPoints.ToArray());
+                _curve = new BezierCurve(controlPoints.ToArray(), unityLength);
+                infill_curve = new BezierCurve(controlPoints.ToArray(), unityLength);
                 break;
             case CurveType.CatmullRom:
-                _curve = new CatmullRomCurve(controlPoints.ToArray());
-                infill_curve = new CatmullRomCurve(controlPoints.ToArray());
+                _curve = new CatmullRomCurve(controlPoints.ToArray(), unityLength);
+                infill_curve = new CatmullRomCurve(controlPoints.ToArray(), unityLength);
                 break;
             case CurveType.Linear:
-                _curve = new LinearCurve(controlPoints.ToArray());
-                infill_curve = new LinearCurve(controlPoints.ToArray());
+                _curve = new LinearCurve(controlPoints.ToArray(), unityLength);
+                infill_curve = new LinearCurve(controlPoints.ToArray(), unityLength);
                 break;
             case CurveType.PerfectCircle:
-                _curve = new PerfectCircleCurve(controlPoints.ToArray(), arcLength);
-                infill_curve = new PerfectCircleCurve(controlPoints.ToArray(), arcLength);
+                _curve = new BezierCurve(controlPoints.ToArray(), unityLength);
+                infill_curve = new BezierCurve(controlPoints.ToArray(), unityLength);
                 break;
-            default:
-                Debug.LogWarning("Unknown curve type: " + curveType);
-                break;
+                // _curve = new PerfectCircleCurve(controlPoints.ToArray(), unityLength);
+                // infill_curve = new PerfectCircleCurve(controlPoints.ToArray(), unityLength);
+                // break;
+            // default:
+            //     Debug.LogWarning("Unbekannter Kurventyp: " + curveType);
+            //     break;
         }
     }
 
     private void SetLineRenderer()
     {
         _lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
-        _lineRenderer.startWidth = 0.6f;
-        _lineRenderer.endWidth = 0.6f;
+        _lineRenderer.startWidth = 50f;
+        _lineRenderer.endWidth = 50f;
 
-        infill.startWidth = 0.5f;
-        infill.endWidth = 0.5f;
+        infill.startWidth = 40f;
+        infill.endWidth = 40f;
         infill.startColor = new Color(0f, 0f, 0f, 1f);
         infill.endColor = new Color(0f, 0f, 0f, 1f);
     }
 
     public void SetupSphere()
     {
-        sphere.transform.localScale = new Vector3(0.6f, 0.6f, 0.6f);
+        sphere.transform.localScale = new Vector3(60f, 60f, 60f);
     }
 
     public void SetColor(Color c)

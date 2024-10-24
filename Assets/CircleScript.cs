@@ -31,7 +31,7 @@ public class CircleScript : MonoBehaviour
         if (ttl <= 0f) Destroy(this.gameObject);
         ttl = ttl - Time.deltaTime;
 
-        border.transform.localScale = Vector3.Lerp(Vector3.one, initBorderScale, ttl / maxLifespan);
+        border.transform.localScale = Vector3.Lerp(Vector3.zero, initBorderScale, ttl / maxLifespan);
 
         if (ttl <= 0f)
         {

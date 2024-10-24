@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class SwipeController : MonoBehaviour
@@ -33,6 +31,7 @@ public class SwipeController : MonoBehaviour
             targetPos -= maxPage*pageStep;
             Next();
         }
+        PlayerPrefs.SetInt("Song", currentPage);
     }
 
     public void Previous()
@@ -43,12 +42,12 @@ public class SwipeController : MonoBehaviour
             targetPos -= pageStep;
             MovePage();
         }
-        else if (currentPage == 1)
-                {
+        else if (currentPage == 1) {
                     currentPage = maxPage + 1;
                     targetPos += maxPage*pageStep;
                     Previous();
-                }
+        }
+        PlayerPrefs.SetInt("Song", currentPage);
     }
 
     void MovePage()
