@@ -230,7 +230,7 @@ public class OsuParser : MonoBehaviour
             }
         }
 
-       // LevelEnd();
+        LevelEnd();
     }
 
     void SpawnDot(Vector3 position,Color color)
@@ -380,27 +380,27 @@ public class OsuParser : MonoBehaviour
         }
     }
 
-     /*public void LevelEnd()
+     public void LevelEnd()
      {
-         Debug.Log("awake");
+         Debug.Log("LevelEnd");
          // List<double> borderScores = highscoreTable.getBorderScores();
          
          //if(gameManager.score <= borderScores[0] && gameManager.score >= borderScores[1]){
 
 
-         score = 500;//gameManager.score;
-         score = (double) GameObject.Find("GameManager").getComponent<GameManager>().score;
+         score = PlayerPrefs.GetInt("Score");//gameManager.score;
+         // score = (double) GameObject.Find("GameManager").getComponent<GameManager>().score;
          popUpPanel.transform.Find("scoreText").GetComponent<Text>().text = score.ToString();
 
          popUpPanel.SetActive(true);
-         /*MainMenu.SetActive(false);
-         Next.SetActive(false);
-         Previous.SetActive(false);
-         ScrollView.SetActive(false);
-
-         //highscoreTable.AddHighscoreEntry(score, inputField.playername);
+         // MainMenu.SetActive(false);
+         // Next.SetActive(false);
+         // Previous.SetActive(false);
+         // ScrollView.SetActive(false);
+         //
+         // highscoreTable.AddHighscoreEntry(score, inputField.playername);
 
          //}
-     }*/
+     }
   
 }

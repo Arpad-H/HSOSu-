@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,65 +8,67 @@ using UnityEditor;
 
 public class HighscoreTable : MonoBehaviour
 {
-    private Transform entryContainer;
-    private Transform entryTemplate; 
-    private List<HighscoreEntry> highscoreEntryList;
-    private List<Transform> highscoreEntryTransformList;
-    private string path = "Assets/Highscores/song1.txt";
-    
-    private void Awake()
+    private Transform _entryContainer;
+    private Transform _entryTemplate; 
+    private List<HighscoreEntry> _highscoreEntryList;
+    private List<Transform> _highscoreEntryTransformList;
+    private const string Path = "Assets/Highscores/song1.txt";
+
+    private void OnEnable()
     {
-        entryContainer = transform.Find("highscoreEntryContainer");
-        entryTemplate = entryContainer.Find("highscoreEntryTemplate");
-        
-        entryTemplate.gameObject.SetActive(false);
-        
+        _entryContainer = transform.Find("highscoreEntryContainer");
+        _entryTemplate = _entryContainer.Find("highscoreEntryTemplate");
+
+        _entryTemplate.gameObject.SetActive(false);
         getHighscoreList();
-        highscoreEntryTransformList = new List<Transform>();
+        _highscoreEntryTransformList = new List<Transform>();
         int x;
-        if (highscoreEntryList.Count < 5)
+        if (_highscoreEntryList.Count < 5)
         {
-            x = highscoreEntryList.Count;
+            x = _highscoreEntryList.Count;
         }
         else
         {
             x = 5;
         }
-        for (int i = 0; i < x; i++)
+        for (var i = 0; i < x; i++)
         {
-            HighscoreEntry highscoreEntry = highscoreEntryList[i];
-            CreateHighscoreEntryTransform(highscoreEntry, entryContainer, highscoreEntryTransformList);
+            var highscoreEntry = _highscoreEntryList[i];
+            CreateHighscoreEntryTransform(highscoreEntry, _entryContainer, _highscoreEntryTransformList);
         }
     }
 
+    private void OnDisable()
+    {
+        for (var i = 0; i < _highscoreEntryList.Count; i++) { Destroy(_highscoreEntryTransformList[i].gameObject); }
+    }
+    
     private void getHighscoreList()
     {
         
-        highscoreEntryList = new List<HighscoreEntry>();
-        path = path.Replace("1", PlayerPrefs.GetInt("Song").ToString());
-        string[] lines = File.ReadAllLines(path);
-        Debug.Log(lines);
-        foreach (string line in lines)
+        _highscoreEntryList = new List<HighscoreEntry>();
+        var path = Path.Replace("1", PlayerPrefs.GetInt("Song").ToString());
+        var lines = File.ReadAllLines(path);
+        Debug.Log(lines.Length);
+        foreach (var line in lines)
         {
-            string[] parts = line.Split(' ');
-            if (parts.Length == 2 && double.TryParse(parts[1], out double number))
+            var parts = line.Split(' ');
+            if (parts.Length == 2 && double.TryParse(parts[1], out var number))
             {
-                string name = parts[0];
-                highscoreEntryList.Add(new HighscoreEntry(number, name));
+                var playerName = parts[0];
+                _highscoreEntryList.Add(new HighscoreEntry(number, playerName));
             }
         }
        
         
         //sort
-        for(int i = 0; i < highscoreEntryList.Count; i++)
+        for(var i = 0; i < _highscoreEntryList.Count; i++)
         {
-            for(int j = i; j < highscoreEntryList.Count; j++)
+            for(var j = i; j < _highscoreEntryList.Count; j++)
             {
-                if (highscoreEntryList[j].score > highscoreEntryList[i].score)
+                if (_highscoreEntryList[j].score > _highscoreEntryList[i].score)
                 {
-                    HighscoreEntry tmp = highscoreEntryList[i];
-                    highscoreEntryList[i] = highscoreEntryList[j];
-                    highscoreEntryList[j] = tmp;
+                    (_highscoreEntryList[i], _highscoreEntryList[j]) = (_highscoreEntryList[j], _highscoreEntryList[i]);
                 }
             }
         }   
@@ -77,16 +80,16 @@ public class HighscoreTable : MonoBehaviour
     {
         getHighscoreList();
         double borderScore; 
-        if (highscoreEntryList.Count > 5)
+        if (_highscoreEntryList.Count > 5)
         {
-             borderScore = highscoreEntryList[0].score;
+             borderScore = _highscoreEntryList[0].score;
         }
         else
         {
             borderScore = 0;
         }
 
-        Debug.Log("HsELC: " + highscoreEntryList.Count);
+        // Debug.Log("HsELC: " + highscoreEntryList.Count);
 
         return borderScore;
 
@@ -96,29 +99,29 @@ public class HighscoreTable : MonoBehaviour
 
     private void CreateHighscoreEntryTransform(HighscoreEntry highscoreEntry, Transform container, List<Transform> transformList)
     {
-        float templateHeight = 100f;
-        Debug.Log("1");
+        const float templateHeight = 100f;
+        // Debug.Log("1");
         
-        Transform entryTransform = Instantiate(entryTemplate, container);
-        RectTransform entryRectTransform = entryTransform.GetComponent<RectTransform>();
+        var entryTransform = Instantiate(_entryTemplate, container);
+        var entryRectTransform = entryTransform.GetComponent<RectTransform>();
         entryRectTransform.anchoredPosition = new Vector2(0, -templateHeight * transformList.Count);
         entryTransform.gameObject.SetActive(true);
-        Debug.Log("1");          
-        string name = highscoreEntry.name;
-        entryTransform.Find("nameText").GetComponent<Text>().text = name;
-        Debug.Log("1");        
-        double points = highscoreEntry.score;
+        // Debug.Log("1");          
+        var playerName = highscoreEntry.name;
+        entryTransform.Find("nameText").GetComponent<Text>().text = playerName;
+        // Debug.Log("1");        
+        var points = highscoreEntry.score;
         entryTransform.Find("scoreText").GetComponent<Text>().text = points.ToString();
-        Debug.Log("1");
+        // Debug.Log("1");
         transformList.Add(entryTransform);
-        Debug.Log("5");
+        // Debug.Log("5");
     }
     
-    public void AddHighscoreEntry(double score, string name)
+    public void AddHighscoreEntry(double score, string playerName)
     {
         
-        path.Replace("1", PlayerPrefs.GetInt("Song").ToString());
-        string entry = name + " " + score.ToString();
+        var path = Path.Replace("1", PlayerPrefs.GetInt("Song").ToString());
+        var entry = playerName + " " + score.ToString();
         
        File.AppendAllLines(path, new[] { entry });
     }
