@@ -43,14 +43,15 @@ public class PenConnection : MonoBehaviour
     UdpClient udpClient;
     IPEndPoint remoteEndPoint;
     public GameObject cursorDot;
-    public CursorScript cursorScript;
+     CursorScript cursorScript;
     CultureInfo en_us = CultureInfo.GetCultureInfo("en-US");
     private float orthoSize;
     private float aspectRatio;
     private float height;
     private float width;
     
-   
+    private int UDPPort;
+
     // public Camera camera;
 
 
@@ -62,6 +63,19 @@ public class PenConnection : MonoBehaviour
     public float penY;
     public float tilltX;
     public float tilltY;
+    
+    private static string GetArg(string name)
+    {
+        var args = System.Environment.GetCommandLineArgs();
+        for (int i = 0; i < args.Length; i++)
+        {
+            if (args[i] == name && args.Length > i + 1)
+            {
+                return args[i + 1];
+            }
+        }
+        return null;
+    }
     
     void Start()
     {

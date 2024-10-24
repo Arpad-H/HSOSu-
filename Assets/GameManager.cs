@@ -12,7 +12,8 @@ public class GameManager : MonoBehaviour
     public int score = 0;
     private void OnEnable()
     {
-        canvasManager = cm.GetComponent<CanvasManager>();
+        canvasManager = cm.GetComponentInChildren<CanvasManager>();
+        // canvasManager = cm.GetComponent<CanvasManager>();
         CircleScript.OnObjectDestroyed += HandleObjectDestroyed;
         SpinnerScript.OnSpinnerDestroyed += HandleSpinnerDestroyed;
         Slidercollider.OnSliderDestroyed += HandleSliderDestroyed;
