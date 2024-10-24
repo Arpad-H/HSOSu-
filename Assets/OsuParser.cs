@@ -150,11 +150,15 @@ public class OsuParser : MonoBehaviour
 
                 var type = int.Parse(data[3]);
 
+                var color = Color.Lerp(Color.red, Color.green, time);
                 // Check if this hit object starts a new combo
                 // Apply the correct color based on comboIndex
                 if ((type & 3) > 0) comboIndex++;
-                var colorIndex = (comboIndex % comboColors.Count) + 1;  // Loop through combo colors
-                var color = comboColors.ContainsKey(colorIndex) ? comboColors[colorIndex] : Color.white;
+                if (comboColors.Count > 0)
+                {
+                    var colorIndex = (comboIndex % comboColors.Count) + 1; // Loop through combo colors
+                    color = comboColors.ContainsKey(colorIndex) ? comboColors[colorIndex] : Color.white;
+                }
 
                 if ((type & 1) > 0) // Check if it's a hit circle
                 {
