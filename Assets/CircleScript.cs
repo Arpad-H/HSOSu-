@@ -14,7 +14,7 @@ public class CircleScript : MonoBehaviour, Interactable
     public GameObject hitbox;
     public GameObject filling;
     private float ttl = 5f;
-    private float maxLifespan;
+    public float maxLifespan;
     private Vector3 initBorderScale;
 
     bool hovered = false;
@@ -22,7 +22,6 @@ public class CircleScript : MonoBehaviour, Interactable
     // Start is called before the first frame update
     void Start()
     {
-        maxLifespan = ttl;
         initBorderScale = border.transform.localScale;
     }
 
@@ -33,7 +32,7 @@ public class CircleScript : MonoBehaviour, Interactable
         if (ttl <= 0f) Destroy(this.gameObject);
         ttl = ttl - Time.deltaTime;
 
-        border.transform.localScale = Vector3.Lerp(hitbox.transform.localScale, initBorderScale, ttl / maxLifespan);
+        border.transform.localScale = Vector3.Lerp(hitbox.transform.localScale, initBorderScale, ttl  / maxLifespan );
         
 
        
@@ -64,6 +63,11 @@ public class CircleScript : MonoBehaviour, Interactable
     {
         
     }
+    public void SetTTL(float ttl)
+    {
+        this.ttl = ttl *2;
+        maxLifespan = ttl*2;
+    }   
 
     private void OnDestroy()
     {

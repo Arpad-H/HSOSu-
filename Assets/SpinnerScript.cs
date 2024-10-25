@@ -38,7 +38,7 @@ public class SpinnerScript: MonoBehaviour, Interactable
             
             int scoreMultiplier =Mathf.FloorToInt( totalDegTravelled / 360);
             OnSpinnerDestroyed?.Invoke(scoreMultiplier);
-            Destroy(this.gameObject);
+            Destroy(t.gameObject);
         }
 
         if (pressed)
@@ -67,5 +67,10 @@ public class SpinnerScript: MonoBehaviour, Interactable
 
     public void KeyUp()
     {  
+    }
+
+    public void SetTTl(float i)
+    {
+        _ttl = i;
     }
 }

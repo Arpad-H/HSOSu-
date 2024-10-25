@@ -43,6 +43,10 @@ public class HighscoreTable : MonoBehaviour
         
         highscoreEntryList = new List<HighscoreEntry>();
         path = path.Replace("1", PlayerPrefs.GetInt("Song").ToString());
+        if (!File.Exists(path))
+        {
+            File.Create(path).Dispose();
+        }
         string[] lines = File.ReadAllLines(path);
         Debug.Log(lines);
         foreach (string line in lines)

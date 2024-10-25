@@ -8,6 +8,7 @@ public class CursorScript : MonoBehaviour
     
     public bool penDown = false;
     public GameObject outerCircle;
+    public AudioSource audioSource;
     GameObject currentHoveredObject;
     void Start()
     {
@@ -22,6 +23,7 @@ public class CursorScript : MonoBehaviour
         
         if (Input.GetKeyDown("space"))
         {
+            audioSource.Play();
             if (currentHoveredObject != null)
             {
                 Interactable interactable = currentHoveredObject.GetComponent<Interactable>();

@@ -1,42 +1,55 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Quaternion = UnityEngine.Quaternion;
 using Vector3 = UnityEngine.Vector3;
 using UnityEngine.UI;
+using UnityEngine.UIElements;
+using Button = UnityEngine.UI.Button;
+using Image = UnityEngine.UI.Image;
 
 public class OsuParser : MonoBehaviour
 {
-    private float playfieldHeight; 
+    private float playfieldHeight;
     private float playfieldWidth;
-    private float osuScale; 
+    private float osuScale;
     private const int k_OsuWidth = 512;
     private const int k_OsuHeight = 384;
     public Canvas canvas;
-    public AudioSource audioSource; // Reference to the song's audio source //TODO decide based on menu selection and from parser
+
+    public AudioSource
+        audioSource; // Reference to the song's audio source //TODO decide based on menu selection and from parser
+
     public GameObject dotPrefab; // Prefab for the dot
     public GameObject sliderPrefab; // Prefab for the slider
     public GameObject spinnerPrefab; // Prefab for the spinner
-    private Image image;
     private readonly List<HitObject> _hitObjects = new List<HitObject>();
     List<TimingPoint> timingPoints = new List<TimingPoint>();
     Dictionary<int, Color> comboColors = new Dictionary<int, Color>();
+    public GameObject particles;
     public Camera gameCamera;
     public double score;
     public GameObject popUpPanel;
-    public InputField inputField;
-   
+    public TMP_InputField inputField;
+    float aproachRate;
+    private float sliderMultiplier;
+    private float bpm;
+    public float ellapsedTime;
+    public Text scoreText;
+    public Button submitButton;
+    
+
     void Start()
     {
-        image = FindObjectOfType<Image>();
+      
+        Image image = canvas.GetComponent<Image>();
         image = image.canvas.rootCanvas.gameObject.GetComponent<Image>();
-        audioSource = FindObjectOfType<AudioSource>();
-        if (audioSource == null)
-        {
-            Debug.LogError("Audio source not found");
-            audioSource = gameObject.AddComponent<AudioSource>();
-        }
-        var number = PlayerPrefs.HasKey("Song") ? PlayerPrefs.GetInt("Song") : 1;
+
+        var number = PlayerPrefs.HasKey("Song") ? PlayerPrefs.GetInt("Song") : 2;
         ParseOsuFile("Assets/Resources/Songfiles/song" + number + ".osu", out var audioFile, out var background);
         audioSource.clip = Resources.Load<AudioClip>(audioFile);
         Debug.Log(background);
@@ -45,9 +58,16 @@ public class OsuParser : MonoBehaviour
         {
             Debug.LogError("Audio clip not found.\t" + audioFile);
         }
+
         audioSource.clip.LoadAudioData();
-        audioSource.Play();
+        audioSource.Play(); //TODO maybe move if sync issues
         StartCoroutine(SpawnObjects());
+        
+    }
+
+    void Update()
+    {
+        ellapsedTime += Time.deltaTime;
     }
 
     void ParseOsuFile(string path, out string audioFile, out string background)
@@ -56,11 +76,12 @@ public class OsuParser : MonoBehaviour
         bool inHitObjects = false;
         bool inTimingPoints = false;
         bool inColours = false;
-        int comboIndex = 0;  // To track the current combo index
+        bool inDifficulty = false;
+        int comboIndex = 0; // To track the current combo index
 
         audioFile = "Songs/audio";
         background = "Backgrounds/background";
-        
+
         foreach (var line in lines)
         {
             if (line.StartsWith("0,0,\""))
@@ -72,6 +93,7 @@ public class OsuParser : MonoBehaviour
                 background = background[..index];
                 continue;
             }
+
             if (line.StartsWith("AudioFilename: "))
             {
                 audioFile = line.Replace("AudioFilename: ", "Songs/");
@@ -80,21 +102,33 @@ public class OsuParser : MonoBehaviour
                 continue;
             }
 
+            if (line.StartsWith("[Difficulty]"))
+            {
+                inDifficulty = true;
+                inColours = false;
+                inTimingPoints = false;
+                inHitObjects = false;
+                continue;
+            }
+
             // Check if we've reached the [Colours] section
             if (line.StartsWith("[Colours]"))
             {
                 inColours = true;
                 inHitObjects = false;
+                inTimingPoints = false;
+                inDifficulty = false;
                 continue;
             }
 
-            
+
             // Check if we've reached the [TimingPoints] section
             if (line.StartsWith("[TimingPoints]"))
             {
                 inColours = false;
                 inTimingPoints = true;
                 inHitObjects = false;
+                inDifficulty = false;
                 continue;
             }
 
@@ -102,8 +136,18 @@ public class OsuParser : MonoBehaviour
             if (line.StartsWith("[HitObjects]"))
             {
                 inHitObjects = true;
+                inColours = false;
+                inTimingPoints = false;
+                inDifficulty = false;
                 continue;
             }
+
+            if (inDifficulty)
+            {
+                if (line.StartsWith("ApproachRate:")) aproachRate = float.Parse(line.Split(':')[1]);
+                if (line.StartsWith("SliderMultiplier:")) sliderMultiplier = float.Parse(line.Split(':')[1]);
+            }
+
             // Parse the [Colours] section
             if (inColours && line.StartsWith("Combo"))
             {
@@ -112,16 +156,16 @@ public class OsuParser : MonoBehaviour
                     inColours = false;
                     continue;
                 }
-                
+
                 var split = line.Split(':');
-                var comboNumber = int.Parse(split[0].Substring(5));  // Get the combo number (e.g., Combo1 -> 1)
+                var comboNumber = int.Parse(split[0].Substring(5)); // Get the combo number (e.g., Combo1 -> 1)
                 var colorValues = split[1].Trim().Split(',');
                 var color = new Color(
                     float.Parse(colorValues[0]) / 255f,
                     float.Parse(colorValues[1]) / 255f,
                     float.Parse(colorValues[2]) / 255f
                 );
-                comboColors[comboNumber] = color;  // Store combo color
+                comboColors[comboNumber] = color; // Store combo color
             }
 
             if (inTimingPoints)
@@ -131,34 +175,35 @@ public class OsuParser : MonoBehaviour
                     inTimingPoints = false;
                     continue;
                 }
+
                 string[] data = line.Split(',');
 
-                float time = int.Parse(data[0]) / 1000f; // Time in seconds
+                float time = (int.Parse(data[0]) / 1000f); // Time in seconds
                 float beatLength = float.Parse(data[1]); // Positive for uninherited, negative for inherited
+
+
                 int meter = int.Parse(data[2]); // Time signature (optional, often ignored)
-                // float sliderMultiplier = data.Length > 7 ? float.Parse(data[7]) : 1f;
-
-                bool inherited = beatLength < 0; // Inherited timing points have negative beatLength
-
-                timingPoints.Add(new TimingPoint(time, beatLength,meter, inherited));
+                bool inherited = int.Parse(data[7]) == 1; // Check if it's an inherited point
+                timingPoints.Add(new TimingPoint(time, beatLength, meter, inherited));
             }
 
 
             if (inHitObjects)
             {
-
                 var data = line.Split(',');
 
                 var x = int.Parse(data[0]);
                 var y = int.Parse(data[1]);
-                var time = (float.Parse(data[2]) / 1000) - 10; //TOODO REMOVE THE TIMESKIP
+                var time = (float.Parse(data[2]) / 1000);
 
                 var type = int.Parse(data[3]);
 
                 var color = Color.Lerp(Color.red, Color.green, time);
                 // Check if this hit object starts a new combo
                 // Apply the correct color based on comboIndex
-                if ((type & 3) > 0) comboIndex++;
+
+                if ((type & 4) > 0) comboIndex++;
+
                 if (comboColors.Count > 0)
                 {
                     var colorIndex = (comboIndex % comboColors.Count) + 1; // Loop through combo colors
@@ -167,17 +212,19 @@ public class OsuParser : MonoBehaviour
 
                 if ((type & 1) > 0) // Check if it's a hit circle
                 {
-                    _hitObjects.Add(new Circle(OsuToUnityCoordinates(x,y), time, color));
+                    _hitObjects.Add(new Circle(OsuToUnityCoordinates(x, y), time, color));
                 }
                 else if ((type & 2) > 0) // Check if it's a slider
                 {
                     var sliderData = data[5]; // L|291:77, P|...
                     var pixelLength = float.Parse(data[7]);
-                    _hitObjects.Add(new Slider(OsuToUnityCoordinates(x,y), time, sliderData, OsuToUnityLength(pixelLength), color));
+                    _hitObjects.Add(new Slider(OsuToUnityCoordinates(x, y), time, sliderData, pixelLength, color));
                 }
-                else if ((type & 4) > 0) // Check if it's a spinner
+                else if ((type & 8) > 0) // Check if it's a spinner
                 {
-                    _hitObjects.Add(new Spinner(OsuToUnityCoordinates(k_OsuWidth / 2, k_OsuHeight / 2), time, color));
+                    float endTime = float.Parse(data[5]) / 1000;
+                    _hitObjects.Add(new Spinner(OsuToUnityCoordinates(k_OsuWidth / 2, k_OsuHeight / 2), time, color,
+                        endTime));
                 }
             }
         }
@@ -187,10 +234,9 @@ public class OsuParser : MonoBehaviour
     {
         return osuLen;
     }
-    
+
     Vector3 OsuToUnityCoordinates(int xOsu, int yOsu)
     {
-        
         yOsu = k_OsuHeight / 2 - yOsu; // Flip Y axis
         xOsu -= k_OsuWidth / 2;
         return new Vector3(xOsu, yOsu, 0);
@@ -199,19 +245,23 @@ public class OsuParser : MonoBehaviour
     IEnumerator SpawnObjects()
     {
         TimingPoint currentTimingPoint = timingPoints[0]; // Start with the first timing point
-
+        float lastUninheritedBeatLength = currentTimingPoint.beatLength;
         foreach (var hitObject in _hitObjects)
         {
-            // Get the correct timing point for the current hit object's time
             currentTimingPoint = GetTimingPointForTime(timingPoints, hitObject.time);
 
-            // Calculate time to wait, adjusting for BPM (based on beat length)
-            float waitTime = hitObject.time - audioSource.time;
-            if (currentTimingPoint != null && currentTimingPoint.inherited)
+            if (currentTimingPoint.beatLength > 0)
             {
-                // If it's an uninherited point, use the beat length for accurate timing
-                waitTime = hitObject.time - (audioSource.time + currentTimingPoint.beatLength / 1000f);
+                lastUninheritedBeatLength = currentTimingPoint.beatLength;
             }
+
+            // Calculate time to wait
+            float waitTime = hitObject.time - audioSource.time;
+
+            // if (currentTimingPoint != null && currentTimingPoint.inherited)
+            // {
+            //     waitTime = hitObject.time - (audioSource.time + currentTimingPoint.beatLength / 1000f);
+            // }
 
             yield return new WaitForSeconds(waitTime);
             switch (hitObject)
@@ -220,32 +270,53 @@ public class OsuParser : MonoBehaviour
                     SpawnDot(circle.position, circle.color);
                     break;
                 case Slider slider:
-                    // Adjust slider speed and length according to timing point's slider multiplier
-                    float adjustedArcLength = slider.ArcLength;
-                    SpawnSlider(slider.position, slider.PathData, adjustedArcLength, slider.color);
+
+                    SpawnSlider(slider.position, slider.PathData, slider.ArcLength, slider.color,
+                        currentTimingPoint.beatLength, lastUninheritedBeatLength);
                     break;
                 case Spinner spinner:
-                    SpawnSpinner(spinner.position);
+                    SpawnSpinner(spinner.position, spinner.time, spinner.endTime);
                     break;
             }
         }
 
-       // LevelEnd();
+        StartCoroutine(LevelEnd());
     }
 
-    void SpawnDot(Vector3 position,Color color)
+    void SpawnDot(Vector3 position, Color color)
     {
         var dot = Instantiate(dotPrefab, position, Quaternion.identity);
-        dot.GetComponent<CircleScript>().SetColor(color);
+        CircleScript circleScript = dot.GetComponent<CircleScript>();
+        circleScript.SetColor(color);
+        var preempt = GetPreempt();
+        circleScript.SetTTL(preempt / 1000);
     }
 
-    void SpawnSpinner(Vector3 position)
+    private float GetPreempt()
+    {
+        float preempt = 2f;
+        if (aproachRate <= 5)
+        {
+            preempt = 1200 + (600 * (5 - aproachRate));
+        }
+        else if (aproachRate > 5)
+        {
+            preempt = 1200 - (750 * (aproachRate - 5));
+        }
+
+        return preempt;
+    }
+
+    void SpawnSpinner(Vector3 position, float startTime, float endTime)
     {
         Instantiate(spinnerPrefab, Vector3.zero, Quaternion.identity);
+        float ttl = endTime - startTime;
+        spinnerPrefab.GetComponentInChildren<SpinnerScript>().SetTTl(ttl);
     }
 
 
-    void SpawnSlider(Vector3 position, string pathData, float length,Color color)
+    void SpawnSlider(Vector3 position, string pathData, float length, Color color, float beatLength,
+        float lastUninheritedBeatLength)
     {
         var sliderObject = Instantiate(sliderPrefab, position, Quaternion.identity);
 
@@ -254,9 +325,21 @@ public class OsuParser : MonoBehaviour
         points.Insert(0, new Vector3(position.x, position.y, 0));
 
         var sliderComponent = sliderObject.GetComponent<SliderScript>();
+
+        float preempt = GetPreempt();
+        sliderComponent.SetAR(preempt / 1000);
+        Debug.Log(lastUninheritedBeatLength);
+        float sv = length * lastUninheritedBeatLength / (sliderMultiplier * 100);
+        if (beatLength < 0)
+        {
+            sv = sv * (-beatLength / 100);
+        }
+
+
+        sliderComponent.SetTTL(sv / 1000);
+
         sliderComponent.SetCurveType(curveType, points, length);
         sliderComponent.SetColor(color);
-
     }
 
     List<Vector3> ParsePathData(string pathData, out CurveType curveType)
@@ -320,7 +403,6 @@ public class OsuParser : MonoBehaviour
 
     public class TimingPoint
     {
-
         public string[] data;
         public float time; // Time in seconds
         public float beatLength; // Positive for uninherited, negative for inherited
@@ -328,7 +410,7 @@ public class OsuParser : MonoBehaviour
         public float sliderMultiplier;
         public bool inherited;
 
-        public TimingPoint(float time, float beatLength,  int meter, bool inherited)
+        public TimingPoint(float time, float beatLength, int meter, bool inherited)
         {
             this.time = time;
             this.beatLength = beatLength;
@@ -345,7 +427,7 @@ public class OsuParser : MonoBehaviour
         public readonly float time;
         public Color color;
 
-        protected HitObject(Vector3 position, float time,Color color)
+        protected HitObject(Vector3 position, float time, Color color)
         {
             this.position = position;
             this.time = time;
@@ -365,7 +447,8 @@ public class OsuParser : MonoBehaviour
         public readonly string PathData;
         public readonly float ArcLength;
 
-        public Slider(Vector3 position, float time, string pathData, float arcLength,Color color) : base(position, time,color)
+        public Slider(Vector3 position, float time, string pathData, float arcLength, Color color) : base(position,
+            time, color)
         {
             PathData = pathData;
             ArcLength = arcLength;
@@ -374,33 +457,37 @@ public class OsuParser : MonoBehaviour
 
     public class Spinner : HitObject
     {
-        public Spinner(Vector3 position, float time,Color color) : base(position, time,color)
-        {
+        public float endTime;
 
+        public Spinner(Vector3 position, float time, Color color, float endTime) : base(position, time, color)
+        {
+            this.endTime = endTime;
         }
     }
 
-     /*public void LevelEnd()
-     {
-         Debug.Log("awake");
-         // List<double> borderScores = highscoreTable.getBorderScores();
-         
-         //if(gameManager.score <= borderScores[0] && gameManager.score >= borderScores[1]){
+    IEnumerator LevelEnd()
+    {
+        particles.SetActive(true);
+        String playername = "";
 
+        int reachedScore = GameObject.Find("GameManager").GetComponent<GameManager>().score;
+        scoreText.text = reachedScore.ToString();
+        submitButton.onClick.AddListener(() => SaveScore(reachedScore));
+        
+        yield return new WaitForSeconds(3);
+        
+        popUpPanel.SetActive(true);
+    }
 
-         score = 500;//gameManager.score;
-         score = (double) GameObject.Find("GameManager").getComponent<GameManager>().score;
-         popUpPanel.transform.Find("scoreText").GetComponent<Text>().text = score.ToString();
+    private void SaveScore(int score)
+    {
+        string path = "Assets/Highscores/song1.txt";
+        String playername = inputField.text;
 
-         popUpPanel.SetActive(true);
-         /*MainMenu.SetActive(false);
-         Next.SetActive(false);
-         Previous.SetActive(false);
-         ScrollView.SetActive(false);
-
-         //highscoreTable.AddHighscoreEntry(score, inputField.playername);
-
-         //}
-     }*/
-  
+        path = path.Replace("1", PlayerPrefs.GetInt("Song").ToString());
+        string entry = playername + " " + score.ToString();
+        Debug.Log(entry);
+        File.AppendAllLines(path, new[] { entry });
+        SceneManager.LoadSceneAsync(0);
+    }
 }

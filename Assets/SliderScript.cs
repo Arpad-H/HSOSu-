@@ -3,14 +3,18 @@ using UnityEngine;
 
 public class SliderScript : MonoBehaviour
 {
-    private float _ttl = 5f;
-    private float maxTtl;// Total time for the sphere to travel
+    public float _ttl = 5f;
+    public float maxTtl; // Total time for the sphere to travel
+    public float arTime = 4f;
+    public float maxArTime = 4f;
     private ICurve _curve;
     private ICurve infill_curve;
     public LineRenderer _lineRenderer;
     public LineRenderer infill;
     public GameObject sphere;
     public GameObject sphereHolder;
+    public GameObject arCircle;
+    Vector3 initBorderScale;
     float circumference = 2 * Mathf.PI * 30;
     private float rotationAmount = 0;
     private float _arcLength;
@@ -28,13 +32,25 @@ public class SliderScript : MonoBehaviour
 
         // Calculate arc length of the curve for smooth movement
         _arcLength = CalculateArcLength(_curve);
+        
+        initBorderScale = arCircle.transform.localScale;
     }
 
     private void Update()
     {
+        
+        arTime -= Time.deltaTime;
+        
+        if (arTime >= 0f)
+        {
+            arCircle.transform.localScale = Vector3.Lerp(new Vector3(0.006f,0.006f,0.006f) * 5 , initBorderScale* 5, arTime / maxArTime);
+            return;
+            
+        }
+        Destroy(arCircle);
         _ttl -= Time.deltaTime;
         _elapsedTime += Time.deltaTime;
-
+        
         if (_ttl <= 0f)
         {
             Destroy(this.gameObject);
@@ -42,15 +58,13 @@ public class SliderScript : MonoBehaviour
         else
         {
             // Move the sphere along the curve based on the time elapsed
-            MoveSphereAlongCurve(_elapsedTime / maxTtl);  // 5f is the initial _ttl
+            MoveSphereAlongCurve(_elapsedTime / maxTtl); // 5f is the initial _ttl
         }
-        
-       
     }
 
     public void SetCurveType(CurveType curveType, List<Vector3> controlPoints, float unityLength)
     {
-        _arcLength = unityLength;  // Set arc length from passed value
+        _arcLength = unityLength; // Set arc length from passed value
         switch (curveType)
         {
             case CurveType.Bezier:
@@ -69,9 +83,9 @@ public class SliderScript : MonoBehaviour
                 _curve = new BezierCurve(controlPoints.ToArray(), unityLength);
                 infill_curve = new BezierCurve(controlPoints.ToArray(), unityLength);
                 break;
-                // _curve = new PerfectCircleCurve(controlPoints.ToArray(), unityLength);
-                // infill_curve = new PerfectCircleCurve(controlPoints.ToArray(), unityLength);
-                // break;
+            // _curve = new PerfectCircleCurve(controlPoints.ToArray(), unityLength);
+            // infill_curve = new PerfectCircleCurve(controlPoints.ToArray(), unityLength);
+            // break;
             // default:
             //     Debug.LogWarning("Unbekannter Kurventyp: " + curveType);
             //     break;
@@ -82,10 +96,10 @@ public class SliderScript : MonoBehaviour
     {
         _lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
         _lineRenderer.startWidth = 50f * transform.localScale.x;
-        _lineRenderer.endWidth = 50f* transform.localScale.x;
+        _lineRenderer.endWidth = 50f * transform.localScale.x;
 
-        infill.startWidth = 40f* transform.localScale.x;
-        infill.endWidth = 40f* transform.localScale.x;
+        infill.startWidth = 40f * transform.localScale.x;
+        infill.endWidth = 40f * transform.localScale.x;
         _lineRenderer.startColor = new Color(1f, 01, 1f, 1f);
         _lineRenderer.endColor = new Color(1f, 1f, 1f, 1f);
     }
@@ -99,7 +113,7 @@ public class SliderScript : MonoBehaviour
     {
         infill.startColor = c;
         infill.endColor = c;
-        
+
         sphere.GetComponent<MeshRenderer>().material.color = c;
     }
 
@@ -110,7 +124,7 @@ public class SliderScript : MonoBehaviour
         Vector3 newPosition = _curve.GetPointAtTime(Mathf.Clamp01(t));
         float distanceMoved = Vector3.Distance(previousPosition, newPosition);
         rotationAmount = (distanceMoved / circumference) * 360f;
-        
+
         //sphere.transform.LookAt(newPosition);
         sphere.transform.Rotate(0, -rotationAmount, 0);
         sphereHolder.transform.LookAt(newPosition);
@@ -122,8 +136,8 @@ public class SliderScript : MonoBehaviour
         // This is a simple method to estimate the arc length of a curve by sampling points
         float length = 0f;
         Vector3 previousPoint = curve.GetPointAtTime(0f);
-        int numSamples = 100;  // Number of segments for sampling the curve
-        
+        int numSamples = 100; // Number of segments for sampling the curve
+
         for (int i = 1; i <= numSamples; i++)
         {
             float t = i / (float)numSamples;
@@ -133,6 +147,19 @@ public class SliderScript : MonoBehaviour
         }
 
         return length;
+    }
+
+    public void SetTTL(float ttl)
+    {
+        _ttl = ttl;
+        maxTtl = ttl;
+       
+    }
+    public void SetAR(float ar)
+    {
+        arTime = ar;
+        maxArTime = ar;
+      
     }
 
     public float GetTTL()
