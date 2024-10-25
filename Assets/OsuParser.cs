@@ -45,7 +45,6 @@ public class OsuParser : MonoBehaviour
 
     void Start()
     {
-      
         Image image = canvas.GetComponent<Image>();
         image = image.canvas.rootCanvas.gameObject.GetComponent<Image>();
 
@@ -62,12 +61,15 @@ public class OsuParser : MonoBehaviour
         audioSource.clip.LoadAudioData();
         audioSource.Play(); //TODO maybe move if sync issues
         StartCoroutine(SpawnObjects());
-        
+       
     }
-
     void Update()
     {
         ellapsedTime += Time.deltaTime;
+        if (Input.GetKeyDown("e"))
+        {
+            SceneManager.LoadSceneAsync(0);
+        }
     }
 
     void ParseOsuFile(string path, out string audioFile, out string background)
@@ -467,7 +469,7 @@ public class OsuParser : MonoBehaviour
 
     IEnumerator LevelEnd()
     {
-        particles.SetActive(true);
+       
         String playername = "";
 
         int reachedScore = GameObject.Find("GameManager").GetComponent<GameManager>().score;
@@ -475,7 +477,7 @@ public class OsuParser : MonoBehaviour
         submitButton.onClick.AddListener(() => SaveScore(reachedScore));
         
         yield return new WaitForSeconds(3);
-        
+         particles.SetActive(true);
         popUpPanel.SetActive(true);
     }
 

@@ -501,7 +501,7 @@ MonoBehaviour:
   dotPrefab: {fileID: 358770297753055203, guid: 80b5b236d61b4e64e9ad73e0f960b276, type: 3}
   sliderPrefab: {fileID: 3243357798010809807, guid: f7fd43b96acabcf438cc092a6baa478b, type: 3}
   spinnerPrefab: {fileID: 2013330752440249520, guid: 1086450b95a9a234b9d1298b9fe8067d, type: 3}
-  particles: {fileID: 0}
+  particles: {fileID: 2137901299}
   gameCamera: {fileID: 0}
   score: 0
   popUpPanel: {fileID: 177088019}

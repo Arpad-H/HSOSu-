@@ -106,7 +106,6 @@ public class PenConnection : MonoBehaviour
         {
             byte[] data = udpClient.Receive(ref remoteEndPoint);
             string message = Encoding.ASCII.GetString(data);
-
             // Use the input to control the game
             // Debug.Log("Received: " + message); 
             String[] stdfs = (message.Split(";"));
